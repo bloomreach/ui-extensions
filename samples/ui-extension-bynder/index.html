@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<!--
+  Copyright 2019 Hippo B.V. (http://www.onehippo.com)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>BloomReach Bynder Extension</title>
+
+    <style>
+      html, body {
+        /* blend with the surrounding editor */
+        background-color: transparent;
+      }
+
+      body, pre {
+        margin: 0;
+      }
+
+      #openDialogButton {
+        margin: 5px 0 8px 5px;
+        display: none;
+        padding: 5px;
+        border-radius: 3px;
+      }
+
+      img {
+        max-width: 100px;
+        max-height: 100px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 5px;                
+        margin: 5px 0 5px 5px;         
+      }
+
+      .image-edit:hover {
+        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
+        opacity: 0.5;
+      }
+
+      .image-added {
+        border: 6px solid rgb(0, 255, 0, 0.25);
+        border-radius: 0px;
+        padding: 0px;
+      }      
+      .image-removed {
+        border: 6px solid rgb(255, 0, 0, 0.25);
+        border-radius: 0px;
+        padding: 0px;
+      }      
+         
+    </style>
+
+  </head>
+  <body>
+    <script type="text/javascript" src="ui-extension.min.js"></script>
+
+    <button id="openDialogButton">Select assets</button>
+    <div id="importedAssets"></div>
+   
+    <script>
+
+      //Enum for compare mode scenarios
+      const assetActions = {
+          ADDED: 'added',
+          REMOVED: 'removed',
+          NONE: 'none'
+      }
+
+      document.addEventListener('DOMContentLoaded', async () => {
+          try {
+            const ui = await UiExtension.register();
+            const brDocument = await ui.document.get();
+        
+            dialogButton(ui, brDocument.mode);
+            updatePreview(ui, brDocument.mode);
+            ui.document.field.autoUpdateHeight();
+
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        });
+        
+        async function dialogButton(ui, mode) {
+          const buttonElement = document.querySelector('#openDialogButton');
+          if (mode !== 'edit') {
+            buttonElement.style.display = 'none';
+            return;
+          }
+          const extensionConfig = JSON.parse(ui.extension.config);
+          const dialogOptions = {
+            title: 'Bynder',
+            url: './dialog.html',
+            size: 'large',
+            value: extensionConfig
+          };
+          
+          buttonElement.style.display = 'block';
+          buttonElement.addEventListener('click', async () => {
+            try {
+              const response = await ui.dialog.open(dialogOptions);
+              await ui.document.field.setValue(response);
+              updatePreview(ui, mode);
+            } catch (error) {
+              if (error.code === 'DialogCanceled') {
+                return;
+              }
+              console.error('Error after open dialog: ', error.code, error.message);
+            }
+          });
+        }
+
+        async function updatePreview(ui, mode) {
+          var importedAssetsContainer = document.getElementById('importedAssets');
+          importedAssetsContainer.innerHTML = ''; //reset thumbnail div
+
+          const value = await ui.document.field.getValue();
+          const storedAssets = value ? JSON.parse(value) : [];
+
+          if (mode === 'compare') {
+            var comparevalue = await ui.document.field.getCompareValue();
+            const compareAssets = comparevalue ? JSON.parse(comparevalue) : [];
+            removedAssets = compareAssets.filter(a => false === storedAssets.some(b => a.id === b.id));
+            unchangedAssets = compareAssets.filter(a => true === storedAssets.some(b => a.id === b.id));
+            addedAssets = storedAssets.filter(a => false === compareAssets.some(b => a.id === b.id));
+
+            addThumbnails(ui, mode, importedAssetsContainer, removedAssets, assetActions.REMOVED);
+            addThumbnails(ui, mode, importedAssetsContainer, unchangedAssets, assetActions.NONE);
+            addThumbnails(ui, mode, importedAssetsContainer, addedAssets, assetActions.ADDED);
+          } else {
+            addThumbnails(ui, mode, importedAssetsContainer, storedAssets, assetActions.NONE);
+          }
+        }
+
+        async function addThumbnails(ui, mode, element, assets, assetAction) {
+          for (var i = 0; i < assets.length; i++) {
+            var asset;
+            asset = assets[i];
+
+            var img = document.createElement('img');
+            img.setAttribute("data-index-number", i);
+            img.onload = () => ui.document.field.updateHeight();
+            if (mode === 'edit') {
+              img.classList.add("image-edit");
+              img.addEventListener('click', async function (e) {
+                await removeAsset(ui, e.target.getAttribute("data-index-number"));
+                updatePreview(ui, mode);
+              });
+            } else if (mode === 'compare') {
+              if (assetAction === assetActions.ADDED) img.classList.add("image-added");
+              else if (assetAction === assetActions.REMOVED) img.classList.add("image-removed");
+            }
+
+            switch (asset.type) {
+              case 'audio':
+              case 'document':
+                img.src = './no-preview.jpeg';
+                break;
+              case 'video':
+              case 'image':
+                img.src = asset.thumbnails['webimage'];
+                break;
+            }
+            element.appendChild(img);
+          }
+        }
+       
+        async function removeAsset(ui, index) {
+          const value = await ui.document.field.getValue();
+          if (value === "") return;
+
+          const storedAssets = JSON.parse(value);
+          var newStoredAssets = [];
+          for (var i = 0; i < storedAssets.length; i++) {
+            if (i == index) continue;
+            newStoredAssets.push(storedAssets[i]);
+          }
+          //Store empty string when no assets are remaining instead of empty array object
+          await ui.document.field.setValue(newStoredAssets.length ? JSON.stringify(newStoredAssets) : "");
+        }      
+    </script>
+
+</body>
+</html>
