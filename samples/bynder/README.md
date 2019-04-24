@@ -2,6 +2,8 @@
 
 This UI Extension integrates BloomReach Experience with Bynder's digital asset management platform. It leverages Bynder's compact view component to browse media from Bynder and use these within BloomReach powered sites.
 
+![Bynder Integration](./bynder.gif)
+
 ##How does the UI Extension work?
 
 From a BloomReach document, a picker dialog can be opened that load Bynder's compact view. On first use, this dialog asks the user for a username and password to authenticate with Bynder. The dialog can then be used to browse and select media, for which references are stored in the BloomReach document. Sites can then use these references to add the selected media to pages.
