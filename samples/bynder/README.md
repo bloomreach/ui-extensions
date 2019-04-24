@@ -2,7 +2,8 @@
 
 This UI Extension integrates BloomReach Experience with Bynder's digital asset management platform. It leverages Bynder's compact view component to browse media from Bynder and use these within BloomReach powered sites.
 
-![Bynder Integration](./Bynder.gif)
+![Bynder Integration](Bynder.gif)
+The Bynder UI Extension in action
 
 ##How does the UI Extension work?
 
