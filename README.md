@@ -9,5 +9,5 @@ If you want to know more about UI Extensions, how to configure them, or how to c
 - [Open UI Extensions documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html)
 - [Open UI SDK at NPM](https://www.npmjs.com/package/@bloomreach/ui-extension)
 - [BloomReach UI Extensions repository](https://github.com/bloomreach/ui-extensions)
-- [BloomReach Experience Manager Documentation] (https://documentation.bloomreach.com)
-- [BloomReach Corporate Site] (https://www.bloomreach.com)
+- [BloomReach Experience Manager Documentation](https://documentation.bloomreach.com)
+- [BloomReach Corporate Site](https://www.bloomreach.com)
