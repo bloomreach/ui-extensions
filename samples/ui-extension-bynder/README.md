@@ -1,2 +1,0 @@
-# BloomReach Bynder UI Extension
-
