@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <!--
   Copyright 2019 Hippo B.V. (http://www.onehippo.com)
 
@@ -14,7 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<html>
+
+<!doctype html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -26,174 +27,182 @@
         /* blend with the surrounding editor */
         background-color: transparent;
       }
-
       body, pre {
         margin: 0;
       }
 
-      #openDialogButton {
+      #open-dialog-button {
         margin: 5px 0 8px 5px;
         display: none;
         padding: 5px;
         border-radius: 3px;
       }
 
-      img {
+      .image {
         max-width: 100px;
         max-height: 100px;
         border: 1px solid #ddd;
         border-radius: 3px;
-        padding: 5px;                
-        margin: 5px 0 5px 5px;         
+        padding: 5px;
+        margin: 5px 0 5px 5px;
       }
-
-      .image-edit:hover {
+      .image__editing:hover {
         box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
         opacity: 0.5;
       }
-
-      .image-added {
+      .image__added {
         border: 6px solid rgb(0, 255, 0, 0.25);
-        border-radius: 0px;
-        padding: 0px;
-      }      
-      .image-removed {
+        border-radius: 0;
+        padding: 0;
+      }
+      .image__removed {
         border: 6px solid rgb(255, 0, 0, 0.25);
-        border-radius: 0px;
-        padding: 0px;
-      }      
-         
+        border-radius: 0;
+        padding: 0;
+      }
     </style>
 
-  </head>
-  <body>
     <script type="text/javascript" src="ui-extension.min.js"></script>
-
-    <button id="openDialogButton">Select assets</button>
-    <div id="importedAssets"></div>
-   
     <script>
+      ((ui, mode) => {
+        //Enum for compare mode scenarios
+        const AssetActions = {
+          Added: 'added',
+          Removed: 'removed',
+          None: 'none',
+        };
 
-      //Enum for compare mode scenarios
-      const assetActions = {
-          ADDED: 'added',
-          REMOVED: 'removed',
-          NONE: 'none'
-      }
+        function deserialize(value) {
+          return (value && JSON.parse(value)) || [];
+        }
 
-      document.addEventListener('DOMContentLoaded', async () => {
+        function serialize(value) {
+          return value.length ? JSON.stringify(value) : '';
+        }
+
+        async function init() {
           try {
-            const ui = await UiExtension.register();
-            const brDocument = await ui.document.get();
-        
-            dialogButton(ui, brDocument.mode);
-            updatePreview(ui, brDocument.mode);
-            ui.document.field.autoUpdateHeight();
+            ui = await UiExtension.register();
+            ({ mode } = await ui.document.get());
 
+            initDialogButton();
+            updatePreview();
+            ui.document.field.setHeight('auto');
           } catch(error) {
             console.error('Failed to register extension:', error.message);
             console.error('- error code:', error.code);
           }
-        });
-        
-        async function dialogButton(ui, mode) {
-          const buttonElement = document.querySelector('#openDialogButton');
+        }
+
+        function initDialogButton() {
+          const buttonElement = document.getElementById('open-dialog-button');
           if (mode !== 'edit') {
             buttonElement.style.display = 'none';
             return;
           }
-          const extensionConfig = JSON.parse(ui.extension.config);
-          const dialogOptions = {
+
+          const config = JSON.parse(ui.extension.config);
+          const options = {
             title: 'Bynder',
             url: './dialog.html',
             size: 'large',
-            value: extensionConfig
+            value: config,
           };
-          
+
           buttonElement.style.display = 'block';
-          buttonElement.addEventListener('click', async () => {
-            try {
-              const response = await ui.dialog.open(dialogOptions);
-              await ui.document.field.setValue(response);
-              updatePreview(ui, mode);
-            } catch (error) {
-              if (error.code === 'DialogCanceled') {
-                return;
-              }
-              console.error('Error after open dialog: ', error.code, error.message);
-            }
-          });
+          buttonElement.addEventListener('click', () => showDialog(options));
         }
 
-        async function updatePreview(ui, mode) {
-          var importedAssetsContainer = document.getElementById('importedAssets');
-          importedAssetsContainer.innerHTML = ''; //reset thumbnail div
+        async function showDialog(options) {
+          try {
+            const value = await ui.dialog.open(options);
+            await ui.document.field.setValue(value);
+            await updatePreview();
+          } catch (error) {
+            if (error.code === 'DialogCanceled') {
+              return;
+            }
 
-          const value = await ui.document.field.getValue();
-          const storedAssets = value ? JSON.parse(value) : [];
+            console.error('Error after open dialog: ', error.code, error.message);
+          }
+        }
+
+        async function updatePreview() {
+          var container = document.getElementById('imported-assets');
+          container.innerHTML = ''; //reset thumbnails div
+
+          const assets = deserialize(await ui.document.field.getValue());
 
           if (mode === 'compare') {
-            var comparevalue = await ui.document.field.getCompareValue();
-            const compareAssets = comparevalue ? JSON.parse(comparevalue) : [];
-            removedAssets = compareAssets.filter(a => false === storedAssets.some(b => a.id === b.id));
-            unchangedAssets = compareAssets.filter(a => true === storedAssets.some(b => a.id === b.id));
-            addedAssets = storedAssets.filter(a => false === compareAssets.some(b => a.id === b.id));
+            const compare = deserialize(await ui.document.field.getCompareValue());
+            const removed = compare.filter(a => !assets.some(b => a.id === b.id));
+            const unchanged = compare.filter(a => assets.some(b => a.id === b.id));
+            const added = assets.filter(a => !compare.some(b => a.id === b.id));
 
-            addThumbnails(ui, mode, importedAssetsContainer, removedAssets, assetActions.REMOVED);
-            addThumbnails(ui, mode, importedAssetsContainer, unchangedAssets, assetActions.NONE);
-            addThumbnails(ui, mode, importedAssetsContainer, addedAssets, assetActions.ADDED);
-          } else {
-            addThumbnails(ui, mode, importedAssetsContainer, storedAssets, assetActions.NONE);
+            addThumbnails(container, removed, AssetActions.Removed);
+            addThumbnails(container, unchanged, AssetActions.None);
+            addThumbnails(container, added, AssetActions.Added);
+
+            return;
           }
+
+          addThumbnails(container, assets, AssetActions.None);
         }
 
-        async function addThumbnails(ui, mode, element, assets, assetAction) {
-          for (var i = 0; i < assets.length; i++) {
-            var asset;
-            asset = assets[i];
-
-            var img = document.createElement('img');
-            img.setAttribute("data-index-number", i);
-            img.onload = () => ui.document.field.updateHeight();
-            if (mode === 'edit') {
-              img.classList.add("image-edit");
-              img.addEventListener('click', async function (e) {
-                await removeAsset(ui, e.target.getAttribute("data-index-number"));
-                updatePreview(ui, mode);
-              });
-            } else if (mode === 'compare') {
-              if (assetAction === assetActions.ADDED) img.classList.add("image-added");
-              else if (assetAction === assetActions.REMOVED) img.classList.add("image-removed");
-            }
-
-            switch (asset.type) {
-              case 'audio':
-              case 'document':
-                img.src = './no-preview.jpeg';
-                break;
-              case 'video':
-              case 'image':
-                img.src = asset.thumbnails['webimage'];
-                break;
-            }
-            element.appendChild(img);
-          }
+        function addThumbnails(container, assets, action) {
+          assets.map(makeThumbnail.bind(null, action))
+            .forEach(img => { container.appendChild(img); });
         }
-       
-        async function removeAsset(ui, index) {
-          const value = await ui.document.field.getValue();
-          if (value === "") return;
 
-          const storedAssets = JSON.parse(value);
-          var newStoredAssets = [];
-          for (var i = 0; i < storedAssets.length; i++) {
-            if (i == index) continue;
-            newStoredAssets.push(storedAssets[i]);
+        function makeThumbnail(action, asset) {
+          const img = document.createElement('img');
+          img.className = 'image';
+
+          switch (asset.type) {
+            case 'image':
+            case 'video':
+              img.src = asset.thumbnails.webimage;
+              break;
+            default:
+              img.src = './no-preview.jpeg';
           }
-          //Store empty string when no assets are remaining instead of empty array object
-          await ui.document.field.setValue(newStoredAssets.length ? JSON.stringify(newStoredAssets) : "");
-        }      
+
+          if (mode === 'edit') {
+            img.classList.add('image__editing');
+            img.addEventListener('click', async () => {
+              await removeAsset(asset);
+              await updatePreview();
+            });
+
+            return img;
+          }
+
+          if (mode === 'compare') {
+            img.classList.add({
+              [AssetActions.Added]: 'image__added',
+              [AssetActions.Removed]: 'image__removed',
+              [AssetActions.None]: 'image__unchanged',
+            }[action]);
+
+            return img;
+          }
+
+          return img;
+        }
+
+        async function removeAsset({ id }) {
+          const assets = deserialize(await ui.document.field.getValue())
+            .filter(asset => id !== asset.id);
+
+          await ui.document.field.setValue(serialize(assets));
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+      })();
     </script>
-
-</body>
+  </head>
+  <body>
+    <button id="open-dialog-button">Select assets</button>
+    <div id="imported-assets"></div>
+  </body>
 </html>
