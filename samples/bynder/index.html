@@ -139,22 +139,22 @@
             const unchanged = compare.filter(a => assets.some(b => a.id === b.id));
             const added = assets.filter(a => !compare.some(b => a.id === b.id));
 
-            addThumbnails(container, removed, AssetActions.Removed);
-            addThumbnails(container, unchanged, AssetActions.None);
-            addThumbnails(container, added, AssetActions.Added);
+            addThumbnails(AssetActions.Removed, container, removed);
+            addThumbnails(AssetActions.None, container, unchanged);
+            addThumbnails(AssetActions.Added, container, added);
 
             return;
           }
 
-          addThumbnails(container, assets, AssetActions.None);
+          addThumbnails(AssetActions.None, container, assets);
         }
 
-        function addThumbnails(container, assets, action) {
-          assets.map(makeThumbnail.bind(null, action))
+        function addThumbnails(action, container, assets) {
+          assets.map(makeThumbnail.bind(null, action, container))
             .forEach(img => { container.appendChild(img); });
         }
 
-        function makeThumbnail(action, asset) {
+        function makeThumbnail(action, container, asset) {
           const img = document.createElement('img');
           img.className = 'image';
 
@@ -171,7 +171,7 @@
             img.classList.add('image__editing');
             img.addEventListener('click', async () => {
               await removeAsset(asset);
-              await updatePreview();
+              container.removeChild(img);
             });
 
             return img;
