@@ -37,8 +37,7 @@ You can now start using the plugin in your documents.
 
 You can now start using the references to Bynder assets that are stored in your documents in your templates.
 
-
 ## Resources
 - [BloomReach UI Extensions Documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html)
 - [Compact View on the Bynder Knowledge Base](https://help.bynder.com/system/compact-view.htm)
-- [Compact View in the Bynder Developer Documentation](https://developer-docs.bynder.com/UI%20components/) 
+- [Compact View in the Bynder Developer Documentation](https://developer-docs.bynder.com/UI%20components/)
