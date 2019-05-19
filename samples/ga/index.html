@@ -1,0 +1,143 @@
+<!--
+  Copyright 2019 Hippo B.V. (http://www.onehippo.com)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hello Analytics Reporting API V4</title>
+    <meta name="google-signin-scope" content="https://www.googleapis.com/auth/analytics.readonly">
+    <script src="ui-extension.min.js"></script>
+    <link href="ga-extension.css" rel="stylesheet"/>
+  </head>
+  <body>
+
+    <h1>Hello Analytics Reporting API V4</h1>
+
+    <!-- The Sign-in button. This will run `onSignIn()` on success. -->
+    <p class="g-signin2" data-onsuccess="onSignIn"></p>
+    <a id="g_logout_btn" class="logout-button hidden" onclick="logout()">
+      <div class="abcRioButtonIcon" style="padding:8px"><div style="width:18px;height:18px;" class="abcRioButtonSvgImageWithFallback abcRioButtonIconImage abcRioButtonIconImage18"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" viewBox="0 0 48 48" class="abcRioButtonSvg"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg></div></div>
+      Sign out
+    </a>
+    <div id="g_user_info" class="hidden">
+      <h3>Logged in user info:</h3>
+      <div id="g_user_fullname">Full name: </div>
+      <div id="g_user_email" >Email: </div>
+    </div>
+    <h1>Report data fetched from GA for the last 7 days.</h1>
+    <table  id="reports">
+      <tr>
+        <th>Metrics</th>
+        <th>Values</th>
+      </tr>
+    </table>
+
+    <!-- The API response will be printed here. -->
+    <h1>JSON representation of the response from GA API.</h1>
+    <textarea cols="80" rows="20" id="query-output"></textarea>
+
+    <script>
+      var VIEW_ID = '';
+      var CLIENT_ID = '';
+
+      UiExtension.register().then((ui) => {
+        var extConfig = JSON.parse(ui.extension.config);
+      VIEW_ID = extConfig.VIEW_ID;
+      CLIENT_ID = extConfig.CLIENT_ID;
+      var link = document.createElement('meta');
+      link.setAttribute('name', 'google-signin-client_id');
+      link.content = CLIENT_ID;
+      document.getElementsByTagName('head')[0].appendChild(link);
+      });
+
+      function onSignIn(googleUser) {
+
+        var profile = googleUser.getBasicProfile();
+        var fullname = document.createElement('span');
+        var email = document.createElement('span');
+        fullname.innerHTML = profile.getName();
+        email.innerHTML = profile.getEmail();
+        document.getElementById('g_user_fullname').appendChild(fullname);
+        document.getElementById('g_user_email').appendChild(email);
+        document.getElementById('g_user_info').classList.remove('hidden');
+        document.getElementById('g_logout_btn').classList.remove('hidden');
+        document.getElementsByClassName('g-signin2')[0].classList.add('hidden');
+
+        queryReports();
+      }
+
+      function queryReports() {
+        cleanReports();
+        gapi.client.request({
+          path: '/v4/reports:batchGet',
+          root: 'https://analyticsreporting.googleapis.com/',
+          method: 'POST',
+          body: {
+            reportRequests: [
+              {viewId: VIEW_ID, dateRanges: [{startDate: '7daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:sessions'}]},
+              {viewId: VIEW_ID, dateRanges: [{startDate: '7daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:users'}]},
+              {viewId: VIEW_ID, dateRanges: [{startDate: '7daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:newUsers'}]},
+              {viewId: VIEW_ID, dateRanges: [{startDate: '7daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:pageviews'}]}
+            ]
+          }
+        }).then(displayResults, console.error.bind(console));
+      }
+
+      function displayResults(response) {
+        var reports = response.result.reports;
+        for(report in reports){
+          var reportsTable = document.getElementById('reports');
+          var row = reportsTable.insertRow(+report + 1);
+          var metricCell = row.insertCell(0);
+          var valueCell = row.insertCell(1);
+          metricCell.innerHTML = reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name;
+          valueCell.innerHTML = reports[report].data.totals[0].values[0];
+        }
+        var formattedJson = JSON.stringify(response.result, null, 2);
+        document.getElementById('query-output').value = formattedJson;
+      }
+
+      function logout () {
+        var auth2 = gapi.auth2.getAuthInstance();
+        auth2.signOut().then(function () {
+          document.getElementById('g_logout_btn').classList.add('hidden');
+          document.getElementById('g_user_info').classList.add('hidden');
+          document.getElementsByClassName('g-signin2')[0].classList.remove('hidden');
+          cleanReports();
+        });
+      }
+
+      function cleanReports () {
+        var reportstbody = document.getElementById('reports').getElementsByTagName("tbody")[0];
+        var theader = reportstbody.firstChild;
+        var array = Array.from(reportstbody.childNodes);
+        array.forEach(function(item){
+          if(item !== theader){
+            reportstbody.removeChild(item)
+          }
+        });
+        document.getElementById('query-output').value = '';
+      }
+
+    </script>
+
+    <!-- Load the JavaScript API client and Sign-in library. -->
+    <script src="https://apis.google.com/js/client:platform.js"></script>
+
+  </body>
+</html>
