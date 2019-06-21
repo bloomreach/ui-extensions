@@ -32,6 +32,7 @@
             ui = await UiExtension.register();
             const options = await ui.dialog.options();
             const bynderContainer = document.getElementById('bynder-config');
+            options.value = JSON.parse(options.value);
 
             bynderContainer.innerHTML = `<div id="bynder-compactview"
               data-language="en_US"
