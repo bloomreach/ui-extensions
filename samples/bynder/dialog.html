@@ -21,7 +21,7 @@
 
     <title>BloomReach Bynder Extension Dialog</title>
 
-    <script src="https://unpkg.com/@bloomreach/ui-extension@13.2.0/dist/ui-extension.min.js"></script>
+    <script type="text/javascript" src="ui-extension.min.js"></script>
   </head>
   <body>
     <div id="bynder-config"></div>
@@ -39,18 +39,18 @@
               data-button="Open Compact View"
               data-zindex="300"
               data-collections="true"
-              data-header="${options.value.dataHeader || 'false'}"
+              data-header="false"
               data-autoload="true"
               data-fullScreen="true"
               data-mode="${options.value.dataMode || 'single'}"
               data-assetTypes="${options.value.dataAssetTypes || 'image'}"
-              data-defaultEnvironment="${options.value.dataDefaultEnvironment}"
+              data-defaultEnvironment="${options.value.dataDefaultEnvironment || 'https://bloomreach.getbynder.com'}"
             ></div>`;
 
             //Add bynder load script after registering to avoid race condition between scripts
             var bynderScript = document.createElement('script');
             bynderScript.setAttribute('type', 'text/javascript');
-            bynderScript.setAttribute('src', 'https://d8ejoa1fys2rk.cloudfront.net/modules/compactview/includes/js/client-1.5.0.min.js');
+            bynderScript.setAttribute('src', 'https://d8ejoa1fys2rk.cloudfront.net/modules/compactview/includes/js/client-1.4.0.min.js');
             document.body.appendChild(bynderScript);
           } catch(error) {
             console.error('Failed to register extension:', error.message);
