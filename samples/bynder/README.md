@@ -11,7 +11,7 @@ From a BloomReach document, a picker dialog can be opened that loads Bynder's co
 
 ## Requirements
 - A BloomReach Experience Manager (brXM) project running on version 13.2.0 or above.
-- An account with Bynder with access to a brand portal (yourIdentifier.getbynder.com).
+- An account with Bynder with access to a brand portal (yourDomain.getbynder.com).
 
 ## Use the Bynder UI Extension in your brXM project
 
@@ -21,7 +21,7 @@ Open the console of your brXM instance and browse to the node `/hippo:configurat
 ```
 /bynder:
   jcr:primaryType: frontend:uiExtension
-  frontend:config: '{"dataMode":"single", "dataAssetTypes":"image","dataDefaultEnvironment":"https://yourIdentifier.getbynder.com"}'
+  frontend:config: '{"dataMode":"single", "dataAssetTypes":"image","dataDefaultEnvironment":"https://yourDomain.getbynder.com"}'
   frontend:displayName: Bynder
   frontend:extensionPoint: document.field
   frontend:url: https://bloomreach.github.io/ui-extensions/samples/bynder/
@@ -42,6 +42,11 @@ You can now start using the plugin in your documents.
 ### Step 3: Render the Bynder assets in your frontend templates
 
 You can now start using the Bynder references that are stored in your documents to render the assets in your frontend templates.
+
+### (Optional) Step 4: Add a Bynder CKeditor plugin to your project
+
+To be able to add images directly into rich text fields, a Bynder CKEditor plugin is needed. A sample implementation of such as plugin is included in this repository [here](./ckeditor).
+
 
 ## Resources
 - [BloomReach UI Extensions Documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html)
