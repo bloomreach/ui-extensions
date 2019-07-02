@@ -14,7 +14,7 @@ Start with copying the source code in this sample plugin to your project. Inform
 The bynder plugin has a dependency on the *iframedialog* CKEditor plugin. This plugin is not installed by default, the code can be downloaded from [here](https://ckeditor.com/cke4/addon/iframedialog). Follow the same steps to install this plugin as well.
 
 #### Allow custom data attributes on image tag
-The plugin adds an img tag to the edited document, and sets a few additional data attributes on the tag: a data-btype attribute to indicate that it is an image from bynder and a data-bid attribute containing the Bynder UUID of the selected image. You may want to add additional custom attributes for your project as well.
+The plugin adds an `<img>` tag to the edited document, and sets a few additional data attributes on the tag: a data-btype attribute to indicate that it is an image from bynder and a data-bid attribute containing the Bynder UUID of the selected image. You may want to add additional custom attributes for your project as well.
 
 With the default settings of the CKEditor HTML cleaner, these custom attributes will be removed when the document is saved. To make sure this does not happen, add the `data-btype` and `data-bid` to the node `/hippo:configuration/hippo:modules/htmlprocessor/hippo:moduleconfig/richtext/img/attributes`. Make sure this is also auto-exported or manually added to bootstrap configuration.
 
