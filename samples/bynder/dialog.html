@@ -30,21 +30,21 @@
         document.addEventListener('DOMContentLoaded', async () => {
           try {
             ui = await UiExtension.register();
-            const options = await ui.dialog.options();
+            const options = await ui.dialog.options(); //From the options we can get the currently selected asset(s), but since Compact View has no way to open with a pre-selected asset we're not using this value. 
             const bynderContainer = document.getElementById('bynder-config');
-            options.value = JSON.parse(options.value);
+            const config = JSON.parse(ui.extension.config);
 
             bynderContainer.innerHTML = `<div id="bynder-compactview"
               data-language="en_US"
               data-button="Open Compact View"
               data-zindex="300"
               data-collections="true"
-              data-header="${options.value.dataHeader || 'false'}"
+              data-header="${config.dataHeader || 'false'}"
               data-autoload="true"
               data-fullScreen="true"
-              data-mode="${options.value.dataMode || 'single'}"
-              data-assetTypes="${options.value.dataAssetTypes || 'image'}"
-              data-defaultEnvironment="${options.value.dataDefaultEnvironment}"
+              data-mode="${config.dataMode || 'single'}"
+              data-assetTypes="${config.dataAssetTypes || 'image'}"
+              data-defaultEnvironment="${config.dataDefaultEnvironment}"
             ></div>`;
 
             //Add bynder load script after registering to avoid race condition between scripts
