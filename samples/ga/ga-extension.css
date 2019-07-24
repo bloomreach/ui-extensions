@@ -43,3 +43,9 @@ th, td {
 .hidden{
   display: none;
 }
+
+.analytics-diagram{
+  text-align: center;
+  width: 100%;
+  margin: auto;
+}

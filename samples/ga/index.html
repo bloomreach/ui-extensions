@@ -23,6 +23,11 @@
     <meta name="google-signin-scope" content="https://www.googleapis.com/auth/analytics.readonly">
     <script src="ui-extension.min.js"></script>
     <link href="ga-extension.css" rel="stylesheet"/>
+    <!-- Load c3.css -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.2/c3.css" rel="stylesheet"/>
+    <!-- Load d3.js and c3.js -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.2/c3.min.js"></script>
   </head>
   <body>
 
@@ -39,14 +44,15 @@
       <div id="g_user_fullname">Full name: </div>
       <div id="g_user_email" >Email: </div>
     </div>
-    <h1>Report data fetched from GA for the last 7 days.</h1>
+    <h1>Report data fetched from GA for the last 30 days.</h1>
     <table  id="reports">
       <tr>
         <th>Metrics</th>
         <th>Values</th>
       </tr>
     </table>
-
+    <div id="usersPie" class="analytics-diagram"></div>
+    <div id="pageViewsChart" class="analytics-diagram"></div>
     <!-- The API response will be printed here. -->
     <h1>JSON representation of the response from GA API.</h1>
     <textarea cols="80" rows="20" id="query-output"></textarea>
@@ -54,7 +60,8 @@
     <script>
       var VIEW_ID = '';
       var CLIENT_ID = '';
-
+      var usersReport = {};
+      var pageViewsReport = {};
       UiExtension.register().then((ui) => {
         var extConfig = JSON.parse(ui.extension.config);
       VIEW_ID = extConfig.VIEW_ID;
@@ -89,10 +96,10 @@
           method: 'POST',
           body: {
             reportRequests: [
-              {viewId: VIEW_ID, dateRanges: [{startDate: '7daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:sessions'}]},
-              {viewId: VIEW_ID, dateRanges: [{startDate: '7daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:users'}]},
-              {viewId: VIEW_ID, dateRanges: [{startDate: '7daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:newUsers'}]},
-              {viewId: VIEW_ID, dateRanges: [{startDate: '7daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:pageviews'}]}
+              {viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:sessions'}]},
+              {viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:users'}]},
+              {viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:newUsers'}]},
+              {includeEmptyRows: 'true', viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:pageviews'}], dimensions: [{name: 'ga:date'}]}
             ]
           }
         }).then(displayResults, console.error.bind(console));
@@ -107,19 +114,79 @@
           var valueCell = row.insertCell(1);
           metricCell.innerHTML = reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name;
           valueCell.innerHTML = reports[report].data.totals[0].values[0];
+          if(reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name === 'ga:users' || reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name === 'ga:newUsers'){
+            usersReport[reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name] = reports[report].data.totals[0].values[0];
+          }
+          if(reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name === 'ga:pageviews'){
+            var datesArr = ['Dates'];
+            var pageViewsArr = ['Page Views'];
+            for(var row in reports[report].data.rows){
+              var dateString  = reports[report].data.rows[row].dimensions[0];
+              var year        = dateString.substring(0,4);
+              var month       = dateString.substring(4,6);
+              var day         = dateString.substring(6,8);
+              var date        = new Date(year, month-1, day);
+              datesArr.push(date);
+              pageViewsArr.push(reports[report].data.rows[row].metrics[0].values[0]);
+            }
+            pageViewsReport['dates'] = datesArr;
+            pageViewsReport['pageViews'] = pageViewsArr;
+          }
         }
         var formattedJson = JSON.stringify(response.result, null, 2);
         document.getElementById('query-output').value = formattedJson;
+
+        var usersPie = c3.generate({
+          bindto: '#usersPie',
+          data: {
+            columns: [
+              ['Users', usersReport['ga:users']],
+              ['New Users', usersReport['ga:newUsers']]
+            ],
+            type : 'pie'
+          }
+        });
+
+        var pageViewsChart = c3.generate({
+          bindto: '#pageViewsChart',
+          data: {
+            x: 'Dates',
+            columns: [
+              datesArr,
+              pageViewsArr
+            ]
+          },
+          axis: {
+            x: {
+              type: 'timeseries',
+              tick: {
+                format: '%Y-%m-%d'
+              }
+            }
+          }
+        });
       }
 
       function logout () {
         var auth2 = gapi.auth2.getAuthInstance();
         auth2.signOut().then(function () {
+          cleanUserInformation();
+          document.getElementById('usersPie').innerHTML='';
+          document.getElementById('pageViewsChart').innerHTML='';
           document.getElementById('g_logout_btn').classList.add('hidden');
           document.getElementById('g_user_info').classList.add('hidden');
           document.getElementsByClassName('g-signin2')[0].classList.remove('hidden');
           cleanReports();
         });
+      }
+
+      function cleanUserInformation(){
+        var fullnameField = document.getElementById('g_user_fullname');
+        var emailField = document.getElementById('g_user_email');
+        var fullnameValue = fullnameField.getElementsByTagName('span')[0];
+        var emailValue = emailField.getElementsByTagName('span')[0];
+        fullnameField.removeChild(fullnameValue);
+        emailField.removeChild(emailValue);
       }
 
       function cleanReports () {

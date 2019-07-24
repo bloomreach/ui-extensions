@@ -55,5 +55,7 @@ Now you can write your own extension according to your needs and configure by si
 - [1] [BloomReach UI Extensions Documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html) <br>
 - [2] [Google Analytics Integration](https://developers.google.com/analytics/devguides/integrate/)
 - [3] [Reporting API v4](https://developers.google.com/analytics/devguides/reporting/core/v4/)
+- [4] [Query Explorer](https://ga-dev-tools.appspot.com/query-explorer/)
+- [5] [Dimensions & Metrics Explorer](https://ga-dev-tools.appspot.com/dimensions-metrics-explorer/)
 
 
