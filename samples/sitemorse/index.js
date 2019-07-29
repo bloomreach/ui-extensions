@@ -1,6 +1,5 @@
-((ui) => {
-  console.clear();
-  let error = false;
+(() => {
+  let ui;
   let smartviewurl = '';
   let reporturl = '';
   let instances_collapsible;
@@ -29,34 +28,33 @@
     window.open(reporturl, '_blank');
   }
 
-  function showInfo(show = true) {
+  function displayPanel(id, show) {
     if (show) {
-      document.getElementById("info").classList.remove("hide");
+      document.getElementById(id).classList.remove("hide");
     } else {
-      document.getElementById("info").classList.add("hide");
+      document.getElementById(id).classList.add("hide");
     }
   }
 
   function showAnalytics(page) {
 
-    showInfo(false);
+    displayPanel('info', false);
+    displayPanel('error', false);
     let dialogRef = openDialog();
     
     //Prep config data
     const config = JSON.parse(ui.extension.config);
-    const baseurl = config.baseUrl;
+    const sitemorseUrl = config.sitemorseUrl || "";
     const previewmountname = config.previewMountName || "";
-
-    //-------------------------------
-    //WARNING - HERE BE FILTHY HACKS
+    const token = config.sitemorseToken || "";
+    if (token === "") {
+      console.error("No Sitemorse token found in config");
+      displayPanel('error', true);
+      closeDialog(dialogRef);
+      return;
+    }
 
     let searchurl = page.url;
-
-    //Fix missing end slash on homepage
-    //if (searchurl.slice(-4) === "site") {
-    //  console.log("Fixing missing trailing slash");
-    //  searchurl += "/";
-    //}
 
     //Replacing url to include preview mount, if there is one
     searchurl = page.path != "/" ? page.url.replace(page.path, "/") + previewmountname + page.path : page.url + previewmountname + page.path;
@@ -67,23 +65,21 @@
     }
 
     console.log("Analyzing URL: " + searchurl);
-    //-------------------------------
-
-    analyzeUrl(baseurl,searchurl)
+    analyzeUrl(sitemorseUrl,searchurl, token)
       .then((result) => {
         console.log("Data received, processing results");
         processResults(result);
+        displayPanel('info', true);
         closeDialog(dialogRef);
-        showInfo(true);
       }, () => {
-        self.error = true;
-        console.log("error");
+        console.error('Unable to access Sitemorse service at:', sitemorseUrl);
+        displayPanel('error', true);
         closeDialog(dialogRef);
       });
   }
 
-  async function analyzeUrl (baseurl, searchurl) {
-    const response = await fetch(`${baseurl}/?url=${searchurl}`);
+  async function analyzeUrl (serviceurl, searchurl, token) {
+    const response = await fetch(`${serviceurl}/?url=${searchurl}&token=${token}`);
     return await response.json(); //extract JSON from the http response
   }
 
@@ -191,7 +187,6 @@
     if (instance === null) return;
     instance.close();
   }
-
 
   function initTooltips () {
     const elems_tooltip = document.querySelectorAll('.tooltipped');
