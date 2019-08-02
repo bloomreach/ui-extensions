@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/ui-extensions/samples/external-document-picker/build/static/css/main.2cce8147.chunk.css",
-    "main.js": "/ui-extensions/samples/external-document-picker/build/static/js/main.73c366b7.chunk.js",
-    "main.js.map": "/ui-extensions/samples/external-document-picker/build/static/js/main.73c366b7.chunk.js.map",
+    "main.js": "/ui-extensions/samples/external-document-picker/build/static/js/main.c5efd0e2.chunk.js",
+    "main.js.map": "/ui-extensions/samples/external-document-picker/build/static/js/main.c5efd0e2.chunk.js.map",
     "runtime~main.js": "/ui-extensions/samples/external-document-picker/build/static/js/runtime~main.16e7268d.js",
     "runtime~main.js.map": "/ui-extensions/samples/external-document-picker/build/static/js/runtime~main.16e7268d.js.map",
-    "static/js/2.46fc6fcf.chunk.js": "/ui-extensions/samples/external-document-picker/build/static/js/2.46fc6fcf.chunk.js",
-    "static/js/2.46fc6fcf.chunk.js.map": "/ui-extensions/samples/external-document-picker/build/static/js/2.46fc6fcf.chunk.js.map",
+    "static/js/2.6edd9278.chunk.js": "/ui-extensions/samples/external-document-picker/build/static/js/2.6edd9278.chunk.js",
+    "static/js/2.6edd9278.chunk.js.map": "/ui-extensions/samples/external-document-picker/build/static/js/2.6edd9278.chunk.js.map",
     "index.html": "/ui-extensions/samples/external-document-picker/build/index.html",
-    "precache-manifest.e5af8570c11f4d61236eecd55a8bceff.js": "/ui-extensions/samples/external-document-picker/build/precache-manifest.e5af8570c11f4d61236eecd55a8bceff.js",
+    "precache-manifest.51b8a61fb880cd7c778038d31621081f.js": "/ui-extensions/samples/external-document-picker/build/precache-manifest.51b8a61fb880cd7c778038d31621081f.js",
     "service-worker.js": "/ui-extensions/samples/external-document-picker/build/service-worker.js",
     "static/css/main.2cce8147.chunk.css.map": "/ui-extensions/samples/external-document-picker/build/static/css/main.2cce8147.chunk.css.map"
   }
