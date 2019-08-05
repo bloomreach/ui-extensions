@@ -62,7 +62,8 @@
       }
     </style>
 
-    <script type="text/javascript" src="ui-extension.min.js"></script>
+    <script src="https://unpkg.com/@bloomreach/ui-extension@13.2.0/dist/ui-extension.min.js"></script>    
+    
     <script>
       ((ui, mode) => {
         //Enum for compare mode scenarios
@@ -101,12 +102,11 @@
             return;
           }
 
-          const config = JSON.parse(ui.extension.config);
           const options = {
             title: 'Bynder',
             url: './dialog.html',
             size: 'large',
-            value: config,
+            value: '',
           };
 
           buttonElement.style.display = 'block';
@@ -115,8 +115,10 @@
 
         async function showDialog(options) {
           try {
-            const value = await ui.dialog.open(options);
-            await ui.document.field.setValue(value);
+            const curvalue = await ui.document.field.getValue();
+            options.value = curvalue;
+            const newvalue = await ui.dialog.open(options);
+            await ui.document.field.setValue(newvalue);
             await updatePreview();
           } catch (error) {
             if (error.code === 'DialogCanceled') {

@@ -1,0 +1,123 @@
+
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+.image-vertical {
+  display: none;
+}
+.image-horizontal {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+.modal {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+@media only screen and (max-width: 800px) {
+  .image-vertical {
+    display:block;
+    margin-left: auto;
+    margin-right: auto;
+    max-height: 85vh;
+    max-width: 200px;  
+  }
+  .image-horizontal {
+    display: none;
+  }
+  .modal { 
+    max-height: 90vh !important;
+    max-width: 240px !important;
+    overflow-y: hidden;
+    background-color: white;
+  }
+  .modal-content {
+    padding: 20px !important;
+  }
+
+}
+
+.logo {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px;
+  width: 250px;
+  max-width: 80vw;
+}
+
+.button-wrapper {
+  margin-bottom: 20px;
+  text-align: right;
+  padding: 10px;
+}
+
+.collapsible-header {
+  font-size: medium;
+  font-weight: bold;
+}
+
+.check-warning {
+  position: absolute;
+  right: 15px;
+}
+.check {
+  color: green !important;
+}
+
+.warning {
+  color: orange !important;
+}
+
+.collapsible-body {
+  padding: 1rem !important;
+}
+
+table {
+  width: 100%;
+  text-align: left;
+  font-size: small;
+}
+
+th, td {
+  padding: 5px;
+}
+
+.table-category {
+  text-align: center;
+  font-weight: bold;
+  width: 20%;
+}
+.table-count {
+  text-align: center;
+  width: 20px;
+}
+.table-info {
+  text-align: left;
+  width: 30px;
+}
+.table-info-icon {
+  color: gainsboro !important;
+}  
+
+.material-tooltip {
+  padding: 10px 8px;
+  font-size: 14px;
+  background-color: grey;
+  max-width: 70vw;
+}
+
+.error {
+  text-align: center;
+  margin: 5px;
+}
+
+.error-icon {
+  color: red;
+  font-size: 60px;
+  margin: 80px 0px 10px 0px;
+}
+

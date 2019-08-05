@@ -1,0 +1,147 @@
+<!--
+  Copyright 2019 Hippo B.V. (http://www.onehippo.com)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Compact View</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
+    <style>
+        #variant-picker {
+            margin: auto;
+            width: 300px;
+            font-family: 'Open Sans', sans-serif;
+            padding: 50px;
+        }
+        .extra-padding {
+            margin: 15px 0px;
+            padding: 2px;
+        }
+
+        #variant-button {
+            background-color: #2196f3;
+            border: 2px solid #2196f3;
+            color: white;
+            padding: 10px 32px;
+            margin: 15px 0px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 3px;
+            -webkit-transition-duration: 0.4s; /* Safari */
+            transition-duration: 0.4s;
+        }
+        #variant-button:hover {
+            background-color: white;
+            color: #2196f3;
+        }
+        .element-hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+<!-- Compact View Button -->
+<div id="bynder-compactview"
+     data-assetTypes="image"
+     data-autoload="true"
+     data-button="Open Compact View"
+     data-collections="true"
+     data-defaultEnvironment="https://bloomreach.getbynder.com"
+     data-fullScreen="true"
+     data-header="false"
+     data-language="en_US"
+     data-mode="single"
+     data-zindex="300"
+>
+</div>
+
+<!-- Variant selection. To be removed once this has been added to Bynder compact view -->
+<div id="variant-picker" class="element-hidden">
+    <img id="">
+    <h2>Select image variant:</h2>
+    <div id="variant-radio"></div>
+    <button id="variant-button">Continue</button>
+</div>
+
+<script src="https://d8ejoa1fys2rk.cloudfront.net/modules/compactview/includes/js/client-1.5.0.min.js"></script>
+<script>
+  (function (selectedAsset) {
+
+    document.getElementById("variant-button").onclick = variantSelected;
+
+    document.addEventListener('BynderAddMedia', function (e) {
+      // The selected assets are found in the event detail property
+      selectedAsset = e.detail[0];
+      console.log(selectedAsset);
+
+      hideBynderAndShowVariantPicker();
+
+    });
+
+    function hideBynderAndShowVariantPicker() {
+      if (selectedAsset == null) return;
+
+      var bynderdiv = document.getElementById('bynder-compactview');
+      bynderdiv.parentNode.removeChild(bynderdiv);
+
+      var pickerdiv = document.getElementById('variant-picker');
+      pickerdiv.classList.remove('element-hidden');
+
+      var radiodiv = document.getElementById('variant-radio');
+      var variants = selectedAsset.thumbnails;
+      var variantnames = Object.keys(variants);
+      for (var i = 0; i < variantnames.length; i++) {
+        var containerelement = document.createElement('div');
+        containerelement.classList.add('icheck-material-blue');
+        containerelement.classList.add('extra-padding');
+        containerelement = radiodiv.appendChild(containerelement);
+
+        var radioelement = document.createElement('input');
+        if (i === 0) radioelement.checked = true;
+        radioelement.setAttribute('type', 'radio');
+        radioelement.setAttribute('id', 'radio-' + i);
+        radioelement.setAttribute('name', 'variant');
+        radioelement.setAttribute('value', variants[variantnames[i]]);
+        containerelement.appendChild(radioelement);
+
+        var labelelement = document.createElement('LABEL');
+        labelelement.setAttribute('for','radio-' + i);
+        labelelement.innerHTML = variantnames[i];
+        containerelement.appendChild(labelelement);
+      }
+    }
+
+    function variantSelected() {
+      if (selectedAsset == null) return;
+      var checkedVariantUrl = document.querySelector('input[name="variant"]:checked').value;
+
+      //Add selected variant to data object
+      Object.assign(selectedAsset, {"urlSelectedVariant" : checkedVariantUrl});
+
+      var pickerDialog = window.parent.CKEDITOR.dialog.getCurrent();
+      pickerDialog.fire('assetSelected', selectedAsset);
+      pickerDialog.getButton('cancel').click(); //firing the event does not close the dialog, so we also click the cancel button
+    }
+  }());
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/icheck-material@1.0.0/icheck-material.min.css"/>
+</body>
+</html>

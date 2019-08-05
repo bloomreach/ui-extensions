@@ -21,7 +21,7 @@
 
     <title>BloomReach Bynder Extension Dialog</title>
 
-    <script type="text/javascript" src="ui-extension.min.js"></script>
+    <script src="https://unpkg.com/@bloomreach/ui-extension@13.2.0/dist/ui-extension.min.js"></script>
   </head>
   <body>
     <div id="bynder-config"></div>
@@ -30,26 +30,27 @@
         document.addEventListener('DOMContentLoaded', async () => {
           try {
             ui = await UiExtension.register();
-            const options = await ui.dialog.options();
+            const options = await ui.dialog.options(); //From the options we can get the currently selected asset(s), but since Compact View has no way to open with a pre-selected asset we're not using this value. 
             const bynderContainer = document.getElementById('bynder-config');
+            const config = JSON.parse(ui.extension.config);
 
             bynderContainer.innerHTML = `<div id="bynder-compactview"
               data-language="en_US"
               data-button="Open Compact View"
               data-zindex="300"
               data-collections="true"
-              data-header="false"
+              data-header="${config.dataHeader || 'false'}"
               data-autoload="true"
               data-fullScreen="true"
-              data-mode="${options.value.dataMode || 'single'}"
-              data-assetTypes="${options.value.dataAssetTypes || 'image'}"
-              data-defaultEnvironment="${options.value.dataDefaultEnvironment || 'https://bloomreach.getbynder.com'}"
+              data-mode="${config.dataMode || 'single'}"
+              data-assetTypes="${config.dataAssetTypes || 'image'}"
+              data-defaultEnvironment="${config.dataDefaultEnvironment}"
             ></div>`;
 
             //Add bynder load script after registering to avoid race condition between scripts
             var bynderScript = document.createElement('script');
             bynderScript.setAttribute('type', 'text/javascript');
-            bynderScript.setAttribute('src', 'https://d8ejoa1fys2rk.cloudfront.net/modules/compactview/includes/js/client-1.4.0.min.js');
+            bynderScript.setAttribute('src', 'https://d8ejoa1fys2rk.cloudfront.net/modules/compactview/includes/js/client-1.5.0.min.js');
             document.body.appendChild(bynderScript);
           } catch(error) {
             console.error('Failed to register extension:', error.message);
