@@ -30,8 +30,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.2/c3.min.js"></script>
   </head>
   <body>
-
-    <h1>Hello Analytics Reporting API V4</h1>
+    <div style="text-align: center">
+      <img style="width: 50%" src="ga.png"/>
+    </div>
 
     <!-- The Sign-in button. This will run `onSignIn()` on success. -->
     <p class="g-signin2" data-onsuccess="onSignIn"></p>
@@ -54,9 +55,6 @@
     <div id="usersPie" class="analytics-diagram"></div>
     <div id="pageViewsChart" class="analytics-diagram"></div>
     <div id="pageViewsBars" class="analytics-diagram"></div>
-    <!-- The API response will be printed here. -->
-    <h1>JSON representation of the response from GA API.</h1>
-    <textarea cols="80" rows="20" id="query-output"></textarea>
 
     <script>
       var VIEW_ID = '';
@@ -169,8 +167,6 @@
             }
           }
         }
-        var formattedJson = JSON.stringify(response.result, null, 2);
-        document.getElementById('query-output').value = formattedJson;
 
         var usersPie = c3.generate({
           bindto: '#usersPie',
@@ -248,7 +244,6 @@
             reportstbody.removeChild(item)
           }
         });
-        document.getElementById('query-output').value = '';
       }
 
     </script>
