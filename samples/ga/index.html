@@ -53,6 +53,7 @@
     </table>
     <div id="usersPie" class="analytics-diagram"></div>
     <div id="pageViewsChart" class="analytics-diagram"></div>
+    <div id="pageViewsBars" class="analytics-diagram"></div>
     <!-- The API response will be printed here. -->
     <h1>JSON representation of the response from GA API.</h1>
     <textarea cols="80" rows="20" id="query-output"></textarea>
@@ -62,15 +63,36 @@
       var CLIENT_ID = '';
       var usersReport = {};
       var pageViewsReport = {};
+      var pagePath = '';
       UiExtension.register().then((ui) => {
         var extConfig = JSON.parse(ui.extension.config);
-      VIEW_ID = extConfig.VIEW_ID;
-      CLIENT_ID = extConfig.CLIENT_ID;
-      var link = document.createElement('meta');
-      link.setAttribute('name', 'google-signin-client_id');
-      link.content = CLIENT_ID;
-      document.getElementsByTagName('head')[0].appendChild(link);
+        VIEW_ID = extConfig.VIEW_ID;
+        CLIENT_ID = extConfig.CLIENT_ID;
+        var link = document.createElement('meta');
+        link.setAttribute('name', 'google-signin-client_id');
+        link.content = CLIENT_ID;
+        document.getElementsByTagName('head')[0].appendChild(link);
+        var page = ui.channel.page.get();
+        page.then(function (page) {
+          determinePagePath(page);
+        });
+
+        ui.channel.page.on('navigate', function (page) {
+          determinePagePath(page);
+          if(gapi.auth2.getAuthInstance().isSignedIn.get()) {
+            queryReports();
+          }
+        });
       });
+
+
+      function determinePagePath(page){
+        if(page.path === ''){
+          pagePath = '/';
+        } else {
+          pagePath = page.path;
+        }
+      }
 
       function onSignIn(googleUser) {
 
@@ -99,7 +121,10 @@
               {viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:sessions'}]},
               {viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:users'}]},
               {viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:newUsers'}]},
-              {includeEmptyRows: 'true', viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:pageviews'}], dimensions: [{name: 'ga:date'}]}
+              {includeEmptyRows: 'true', viewId: VIEW_ID, dateRanges: [{startDate: '30daysAgo', endDate: 'today'}], metrics: [{expression: 'ga:pageviews'}], dimensions: [{name: 'ga:date'}]},
+              {viewId: VIEW_ID, dimensions: [{name: "ga:pagePath"}], metrics: [{"expression": "ga:pageviews"}], dateRanges: [{startDate: "30daysAgo", endDate: "today"}],
+                dimensionFilterClauses: [{filters: [{operator: "EXACT", dimensionName: "ga:pagePath", expressions: [pagePath]}]}]
+              }
             ]
           }
         }).then(displayResults, console.error.bind(console));
@@ -117,7 +142,8 @@
           if(reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name === 'ga:users' || reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name === 'ga:newUsers'){
             usersReport[reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name] = reports[report].data.totals[0].values[0];
           }
-          if(reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name === 'ga:pageviews'){
+
+          if(reports[report].columnHeader.dimensions != null && reports[report].columnHeader.dimensions[0]=== "ga:date" && reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name === 'ga:pageviews'){
             var datesArr = ['Dates'];
             var pageViewsArr = ['Page Views'];
             for(var row in reports[report].data.rows){
@@ -131,6 +157,16 @@
             }
             pageViewsReport['dates'] = datesArr;
             pageViewsReport['pageViews'] = pageViewsArr;
+          }
+
+          if(reports[report].columnHeader.dimensions != null && reports[report].columnHeader.dimensions[0]=== "ga:pagePath" && reports[report].columnHeader.metricHeader.metricHeaderEntries[0].name === 'ga:pageviews'){
+            var pagesArr = [];
+            for(row in reports[report].data.rows){
+              var singlePage = [];
+              singlePage.push(reports[report].data.rows[row].dimensions[0]);
+              singlePage.push(reports[report].data.rows[row].metrics[0].values[0]);
+              pagesArr.push(singlePage)
+            }
           }
         }
         var formattedJson = JSON.stringify(response.result, null, 2);
@@ -165,6 +201,19 @@
             }
           }
         });
+
+        var pageViewsBars = c3.generate({
+          bindto: '#pageViewsBars',
+          data: {
+            columns: pagesArr,
+            type: 'bar'
+          },
+          bar: {
+            width: {
+              ratio: 0.1
+            }
+          }
+        });
       }
 
       function logout () {
@@ -173,6 +222,7 @@
           cleanUserInformation();
           document.getElementById('usersPie').innerHTML='';
           document.getElementById('pageViewsChart').innerHTML='';
+          document.getElementById('pageViewsBars').innerHTML='';
           document.getElementById('g_logout_btn').classList.add('hidden');
           document.getElementById('g_user_info').classList.add('hidden');
           document.getElementsByClassName('g-signin2')[0].classList.remove('hidden');
