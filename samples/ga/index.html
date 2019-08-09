@@ -345,9 +345,6 @@
         var auth2 = gapi.auth2.getAuthInstance();
         auth2.signOut().then(function () {
           cleanUserInformation();
-          document.getElementById('usersPie').innerHTML = '';
-          document.getElementById('pageViewsChart').innerHTML = '';
-          document.getElementById('pageViewsBars').innerHTML = '';
           document.getElementById('g_logout_btn').classList.add('d-none');
           document.getElementById('g_user_info').classList.add('d-none');
           document.getElementsByClassName('g-signin2')[0].classList.remove('d-none');
@@ -365,6 +362,9 @@
       }
 
       function cleanReports () {
+        document.getElementById('usersPie').innerHTML = '';
+        document.getElementById('pageViewsChart').innerHTML = '';
+        document.getElementById('pageViewsBars').innerHTML = '';
         var reportstbody = document.getElementById('reports').getElementsByTagName("tbody")[0];
         var array = Array.from(reportstbody.childNodes);
         array.forEach(function (item) {
@@ -375,6 +375,7 @@
       function clearDates () {
         $('#startDate').datepicker('setDate', null);
         $('#endDate').datepicker('setDate', null);
+        cleanReports();
       }
     </script>
 
