@@ -3,7 +3,6 @@
 This UI Extension integrates Bloomreach Experience with Giphy, the first and largest GIF search engine. It leverages the official Giphy API to browse GIFs and use these within Bloomreach powered sites.
 
 ![Giphy Integration](giphy.gif)
-The Giphy UI Extension in action
 
 ## How does the UI Extension work?
 
