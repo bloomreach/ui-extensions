@@ -1,0 +1,224 @@
+<!--
+  Copyright 2019 Bloomreach B.V. (http://www.onehippo.com)
+
+  Licensed under the Apache License, Version 2.0 (the 'License');
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an 'AS IS' BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<!doctype html>
+<html lang='en'>
+  <head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+    <title>BloomReach Giphy Extension Dialog</title>
+
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css'>
+    <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en'>
+
+    <script src='https://unpkg.com/@bloomreach/ui-extension@13.3.0/dist/ui-extension.min.js'></script>
+
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+      }
+      .container {
+        width: 90%;
+        max-width: 90%;
+      }
+      .row {
+        margin-top: 20px;
+      }
+
+      h4 {
+        padding: 0px 10px;
+      }
+
+      .imagerow {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0 4px;
+      }
+      .imagecolumn {
+        flex: 25%; /*Assuming there are 4 columns*/
+        padding: 0 4px;
+      }
+      .imagecolumn img {
+        width: 100%;
+        margin-top: 8px;
+        vertical-align: middle;
+        cursor: pointer;
+      }
+      .imagecolumn img:hover {
+        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
+        opacity: 0.5;
+      }                
+
+    </style>
+  </head>
+  <body>
+
+    <div class='container'>
+      <div class='searchbar'>
+        <div class='row'>
+          <div class='input-field col s8 offset-s2'>
+            <i class='material-icons prefix'>search</i>
+            <input id='search_input' type='text' class='validate'>
+            <label for='search_input'>Search all GIFs</label>
+          </div>
+        </div>
+      </div>
+
+      <div class='section_images'>
+        <h4 id='title'> Trending</h4>
+        <div class='imagerow' id='imagegrid'> 
+            <div class='imagecolumn' id='images_col0'></div>
+            <div class='imagecolumn' id='images_col1'></div>
+            <div class='imagecolumn' id='images_col2'></div>
+            <div class='imagecolumn' id='images_col3'></div>
+        </div>
+      </div>       
+    </div> 
+    
+
+    <script>
+      (ui => {
+        
+        let curQuery = '';
+        let curOffset = 0;
+        let busyAddingImages = false;
+
+        async function getTrendingGifs(url, apikey, rating, limit = 10, offset = 0) {
+          if (apikey == '') return;
+          const response = await fetch(`${url}?api_key=${apikey}&limit=${limit}&offset=${offset}` + (rating === '' ? '' : `&rating=${rating}`));
+          return await response.json();
+        }
+
+        async function searchGifs(url, apikey, rating, query, limit = 10, offset = 0) {
+          if (apikey == '') return;
+          const response = await fetch(`${url}?api_key=${apikey}&q=${query}&limit=${limit}&offset=${offset}` + (rating === '' ? '' : `&rating=${rating}`));
+          return await response.json();
+        }
+
+        function addImageToGrid (imagedata, column) {
+          let columnelt = document.getElementById('images_col' + column);
+          if (columnelt === null) {
+            console.error('Error when adding image to grid: column element is null');
+            return;
+          }
+
+          let imageelt = document.createElement('img');
+          imageelt.src = imagedata.images.fixed_width.webp;
+          imageelt.setAttribute("data-giphy", JSON.stringify(imagedata));
+          imageelt.onclick = onClickImage;
+          if (imageelt === null) {
+            console.error('Error when creating image: element is null');
+            return;
+          }
+
+          columnelt.appendChild(imageelt);
+        }
+
+        function addImagesToGrid (imagearray) {
+          let column = curOffset % 4; //Assuming there are 4 columns, 0-based
+          for (var item = 0; item < imagearray.length ; item++) {
+            addImageToGrid(imagearray[item], column);
+            column = (column + 1) % 4; //Assuming there are 4 columns, 0-based
+          }
+        }        
+
+        function clearImageGrid() {
+          for (var columnnr = 0; columnnr < 4 ; columnnr++) { //Assuming there are 4 columns, 0-based
+            let columnelt = document.getElementById('images_col' + columnnr);
+            if (columnelt === null) {
+              console.error('Error when clearing image grid: column element is null');
+              return;
+            }
+            columnelt.innerHTML = '';
+          }
+        }
+
+        async function addAdditionalTrendingImages(url, apiKey, rating, additionalImagesOnScroll) {
+          addImagesToGrid((await getTrendingGifs(url, apiKey, rating, additionalImagesOnScroll, curOffset)).data);
+          curOffset += additionalImagesOnScroll;           
+        }                  
+        async function addAdditionalSearchImages(url, apiKey, rating, additionalImagesOnScroll) {
+          addImagesToGrid((await searchGifs(url, apiKey, rating, curQuery, additionalImagesOnScroll, curOffset)).data);
+          curOffset += additionalImagesOnScroll;           
+        }                  
+
+        function onClickImage(event) {
+          ui.dialog.close(event.target.getAttribute('data-giphy'));
+        }        
+
+        document.addEventListener('DOMContentLoaded', async () => {
+          try {
+            ui = await UiExtension.register();
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+
+          const config = JSON.parse(ui.extension.config);
+          const giphyTrendingUrl = config.giphyTrendingUrl || 'https://api.giphy.com/v1/gifs/trending';
+          const giphySearchUrl = config.giphySearchUrl || 'https://api.giphy.com/v1/gifs/search';
+          const apiKey = config.apiKey || '';
+          const rating = config.rating || '';
+          const initialImages = 20;
+          const additionalImages = 20;
+
+          const trending = await getTrendingGifs(giphyTrendingUrl, apiKey, rating, initialImages);
+          addImagesToGrid(trending.data);
+          curOffset += initialImages;
+
+          document.addEventListener('scroll', async function(event) {
+            const scrollposition = window.innerHeight + window.scrollY;
+            const scrollheight = document.body.scrollHeight;
+            if (!busyAddingImages && scrollheight - scrollposition < 200) {
+              busyAddingImages = true;
+              if (curQuery === '') {
+                await addAdditionalTrendingImages(giphyTrendingUrl, apiKey, rating, additionalImages);
+              } else {
+                await addAdditionalSearchImages(giphySearchUrl, apiKey, rating, additionalImages);
+              }
+              busyAddingImages = false;
+            }
+          });
+
+          const searchinputelt = document.getElementById('search_input');
+          searchinputelt.addEventListener('keyup', async function(event) {
+              if (event.key === 'Enter') {
+                clearImageGrid();
+                curQuery = searchinputelt.value;
+                const title = document.getElementById('title');
+
+                let results;
+                if (curQuery === '') {
+                  results = await getTrendingGifs(giphyTrendingUrl, apiKey, rating, initialImages);
+                  title.innerText = 'Trending';
+                } else {
+                  results = await searchGifs(giphySearchUrl, apiKey, rating, curQuery, initialImages);
+                  title.innerText = 'Results';
+                }
+                addImagesToGrid(results.data);
+                curOffset += initialImages; 
+              }
+          });           
+        });   
+
+      })();
+    </script>
+
+    <!--JavaScript at end of body for optimized loading-->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js'></script>    
+  </body>
+</html>
