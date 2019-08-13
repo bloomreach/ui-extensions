@@ -22,7 +22,7 @@ Open the console of your brXM instance and browse to the node `/hippo:configurat
 ```yaml
 /giphy:
   jcr:primaryType: frontend:uiExtension
-  frontend:config: '{"apiKey":"QDdF1iP9pKgOWu5z2X9JFCjhD55KcGTX", "giphyTrendingUrl":"https://api.giphy.com/v1/gifs/trending","giphySearchUrl":"https://api.giphy.com/v1/gifs/search","rating":"G"}'
+  frontend:config: '{"apiKey":"YOUR_KEY_HERE", "giphyTrendingUrl":"https://api.giphy.com/v1/gifs/trending","giphySearchUrl":"https://api.giphy.com/v1/gifs/search","rating":"G"}'
   frontend:displayName: Giphy
   frontend:extensionPoint: document.field
   frontend:url: https://bloomreach.github.io/ui-extensions/samples/giphy/
