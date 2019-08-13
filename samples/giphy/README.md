@@ -9,15 +9,17 @@ This UI Extension integrates Bloomreach Experience with Giphy, the first and lar
 From a Bloomreach document, a picker dialog can be opened that interacts with Giphy. The initial view shows trending GIFs, and a query can be executed to search GIFS for a certain topic. After selecting a GIF, a reference data object is stored in the Bloomreach document. Sites can then use these references to add the selected GIF to a page.
 
 ## Requirements
+
 - A Bloomreach Experience Manager (brXM) project running on version 13.2.0 or above.
 - An account with Giphy, in which an API key has been created.
 
 ## Use the Giphy UI Extension in your brXM project
 
 ### Step 1: Configure the extension in brXM
+
 Open the console of your brXM instance and browse to the node `/hippo:configuration/hippo:frontend/cms/ui-extensions`. Then import the following YAML snippet:
 
-```
+```yaml
 /giphy:
   jcr:primaryType: frontend:uiExtension
   frontend:config: '{"apiKey":"QDdF1iP9pKgOWu5z2X9JFCjhD55KcGTX", "giphyTrendingUrl":"https://api.giphy.com/v1/gifs/trending","giphySearchUrl":"https://api.giphy.com/v1/gifs/search","rating":"G"}'
@@ -48,6 +50,7 @@ You can now start using the plugin in your documents.
 You can now start using the Giphy GIF object reference that is stored in your document to render the GIF in your frontend template(s). More details about the object reference schema can be found [here](https://developers.giphy.com/docs/api/schema#gif-object).
 
 ## Resources
+
 - [Bloomreach UI Extensions Documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html)
 - [Giphy API documentation](https://developers.giphy.com/docs/api#quick-start-guide)
 - [Giphy Homepage](https://giphy.com/)
