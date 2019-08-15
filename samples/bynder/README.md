@@ -27,7 +27,7 @@ Open the console of your brXM instance and browse to the node `/hippo:configurat
   frontend:url: https://bloomreach.github.io/ui-extensions/samples/bynder/
 ```
 
-The config property holds a JSON object that (partly) controls the behavior of the Bynder Compact View module. The value of the 'dataDefaultEnvironment' should always be changed to match your Bynder environment, the other attributes can be changed according to the Bynder Compact View [developer documentation](https://developer-docs.bynder.com/UI%20components/).
+The config property holds a JSON object that (partly) controls the behavior of the Bynder Compact View module. The value of the 'dataDefaultEnvironment' should always be changed to match your Bynder environment, the other attributes can be changed according to the Bynder Compact View [developer documentation](https://developer-docs.bynder.com/UI-components/).
 
 ### Step 2: Add a Bynder field to your document type(s)
 
@@ -51,4 +51,4 @@ To be able to add images directly into rich text fields, a Bynder CKEditor plugi
 ## Resources
 - [Bloomreach UI Extensions Documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html)
 - [Compact View on the Bynder Knowledge Base](https://help.bynder.com/system/compact-view.htm)
-- [Compact View in the Bynder Developer Documentation](https://developer-docs.bynder.com/UI%20components/)
+- [Compact View in the Bynder Developer Documentation](https://developer-docs.bynder.com/UI-components/)
