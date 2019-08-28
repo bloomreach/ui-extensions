@@ -11,7 +11,7 @@ With the [Bynder Open UI Extension](../) you can use Bynder images seamlessly in
 Start with copying the source code in this sample plugin to your project. Information on how to install a custom CKEditor plugin in your Bloomreach project can be found on [this documentation page](https://documentation.bloomreach.com/library/concepts/document-types/html-fields/ckeditor-plugins.html), in the section titled "Add a custom CKEditor plugin". The following additional steps need to be taken to use this plugin:
 
 #### Add iframedialog plugin
-The bynder plugin has a dependency on the *iframedialog* CKEditor plugin. This plugin is not installed by default, the code can be downloaded from [here](https://ckeditor.com/cke4/addon/iframedialog). Follow the same steps to install this plugin as well.
+The bynder plugin has a dependency on the *iframedialog* CKEditor plugin. As of Bloomreach Experience Manager v 13.4, this plugin is shipped by default and can be enabled using the instructions on [this documentation page](https://documentation.bloomreach.com/library/concepts/document-types/html-fields/ckeditor-plugins.html). When using an older version, the plugin will have to be installed manually. The code can be downloaded from [here](https://ckeditor.com/cke4/addon/iframedialog). Follow the same steps to install this plugin as well.
 
 #### Allow custom data attributes on image tag
 The plugin adds an `<img>` tag to the edited document, and sets a few additional data attributes on the tag: a data-btype attribute to indicate that it is an image from bynder and a data-bid attribute containing the Bynder UUID of the selected image. You may want to add additional custom attributes for your project as well.
