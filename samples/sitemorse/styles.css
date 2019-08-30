@@ -101,6 +101,13 @@ th, td {
 }
 .table-info-icon {
   color: gainsboro !important;
+} 
+.table-video {
+  text-align: left;
+  width: 30px;
+}
+.table-video-icon {
+  color: gainsboro !important;
 }  
 
 .material-tooltip {

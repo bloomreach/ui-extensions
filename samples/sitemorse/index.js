@@ -167,6 +167,23 @@
         cell.appendChild(cellIcon);
       }
       row.appendChild(cell);
+
+      cell = document.createElement("td");
+      cell.classList.add("table-video");
+      if (data[j].video) {
+        cellIcon = document.createElement("i");
+        cellIcon.classList.add("material-icons", "table-video-icon", "tooltipped");
+        cellIcon.setAttribute("data-position", "left");
+        cellIcon.setAttribute("data-tooltip", "play help video for '" + data[j].title + "' (opens in new window)");
+        cellText = document.createTextNode("play_circle_filled");
+        cellIcon.appendChild(cellText);
+        videoLink = document.createElement("a");
+        videoLink.href = data[j].video;
+        videoLink.target = "_blank";
+        videoLink.appendChild(cellIcon);
+        cell.appendChild(videoLink);
+      }
+      row.appendChild(cell);
     
       tblBody.appendChild(row);
     }
