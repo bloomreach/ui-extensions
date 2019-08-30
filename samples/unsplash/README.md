@@ -18,9 +18,9 @@ From a Bloomreach document, a picker dialog can be opened that interacts with Un
 Open the console of your brXM instance and browse to the node `/hippo:configuration/hippo:frontend/cms/ui-extensions`. Then import the following YAML snippet:
 
 ```yaml
-/Unsplash:
+/unsplash:
   jcr:primaryType: frontend:uiExtension
-  frontend:config: '{"clientID":"YOUR_ACCESS_KEY_HERE", "unsplashRandomUrl":"https://api.unsplash.com/photos/random","unsplashSearchUrl":"https://api.unsplash.com/search/photos"}'
+  frontend:config: '{"clientId":"YOUR_ACCESS_KEY_HERE", "unsplashRandomUrl":"https://api.unsplash.com/photos/random","unsplashSearchUrl":"https://api.unsplash.com/search/photos"}'
   frontend:displayName: Unsplash
   frontend:extensionPoint: document.field
   frontend:url: https://bloomreach.github.io/ui-extensions/samples/unsplash/
