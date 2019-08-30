@@ -1,0 +1,275 @@
+<!--
+  Copyright 2019 Bloomreach B.V. (http://www.onehippo.com)
+
+  Licensed under the Apache License, Version 2.0 (the 'License');
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an 'AS IS' BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<!doctype html>
+<html lang='en'>
+  <head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+    <title>BloomReach Giphy Extension Dialog</title>
+
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css'>
+    <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en'>
+
+    <script src='https://unpkg.com/@bloomreach/ui-extension@13.3.0/dist/ui-extension.min.js'></script>
+
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        background: white;
+      }
+      .container {
+        width: 90%;
+        max-width: 90%;
+      }
+      .row {
+        margin-top: 0px;
+      }
+
+      .logo > img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 200px;        
+        max-width: 40%;
+        margin-top: 20px
+      }
+
+      .radio {
+        margin-top: 30px;
+      }
+
+      h4 {
+        padding: 0px 10px;
+      }
+
+      .imagerow {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0 4px;
+      }
+      .imagecolumn {
+        flex: 50%; /*Assuming there are 2 columns*/
+        padding: 0 4px;
+      }
+      .imagecolumn img {
+        width: 100%;
+        margin-top: 8px;
+        vertical-align: middle;
+        cursor: pointer;
+      }
+      .imagecolumn img:hover {
+        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
+        opacity: 0.5;
+      }                
+
+    </style>
+  </head>
+  <body>
+
+    <div class="logo">
+      <img src='./unsplash_logo.jpeg'/>
+    </div>
+
+    <div class='container'>
+      <div class='row'>
+        <div class='input-field col s7'>
+          <i class='material-icons prefix'>search</i>
+          <input id='search_input' type='text' class='validate'>
+          <label for='search_input'>Search all photos</label>
+        </div>
+        <div class="input-field col s3 offset-s1">
+          <select id="orientation_select">
+            <option value="" selected>All</option>
+            <option value="landscape">Landscape</option>
+            <option value="portrait">Portrait</option>
+            <option value="squarish">Squarish</option>
+          </select>
+          <label>Orientation</label>
+        </div>
+      </div>
+
+      <div class='section_images'>
+        <h4 id='title'> Photos</h4>
+        <div class='imagerow' id='imagegrid'> 
+            <div class='imagecolumn' id='images_col0'></div>
+            <div class='imagecolumn' id='images_col1'></div>
+        </div>
+      </div>       
+    </div> 
+    
+
+    <script>
+      (ui => {
+        
+        let curQuery = '';
+        let curOrientation = '';
+        let curOffset = 0;
+        let busyAddingImages = false;
+        const initialImages = 20;
+        const additionalImages = 20;
+        const nrOfColumns = 2; //needs to be aligned with section_images html and .imagecolumn css
+
+        async function getRandomImages(url, clientid, orientation, count) {
+          if (clientid == '') return;
+          const response = await fetch(`${url}?client_id=${clientid}&count=${count}`
+                                      + (['landscape', 'portrait', 'squarish'].indexOf(orientation) >= 0 ? `&orientation=${orientation}` : '')
+                                      );
+          return await response.json();
+        }
+
+        async function searchImages(url, clientid, query, orientation, page, per_page) {
+          if (clientid == '') return;
+          const response = await fetch(`${url}?client_id=${clientid}&query=${query}&page=${page}&per_page=${per_page}`
+                                      + (['landscape', 'portrait', 'squarish'].indexOf(orientation) >= 0 ? `&orientation=${orientation}` : '') 
+                                      );
+          return await response.json();
+        }
+
+        function addImageToGrid (imagedata, column) {
+          let columnelt = document.getElementById('images_col' + column);
+          if (columnelt === null) {
+            console.error('Error when adding image to grid: column element is null');
+            return;
+          }
+
+          let imageelt = document.createElement('img');
+          imageelt.src = imagedata.urls.small + "&w=600";
+          imageelt.setAttribute("data-unsplash", JSON.stringify(imagedata));
+          imageelt.onclick = onClickImage;
+          if (imageelt === null) {
+            console.error('Error when creating image: element is null');
+            return;
+          }
+
+          columnelt.appendChild(imageelt);
+        }
+
+        function addImagesToGrid (imagearray) {
+          let column = curOffset % nrOfColumns;
+          for (var item = 0; item < imagearray.length ; item++) {
+            addImageToGrid(imagearray[item], column);
+            column = (column + 1) % nrOfColumns; 
+          }
+        }        
+
+        function clearImageGrid() {
+          for (var columnnr = 0; columnnr < nrOfColumns ; columnnr++) { 
+            let columnelt = document.getElementById('images_col' + columnnr);
+            if (columnelt === null) {
+              console.error('Error when clearing image grid: column element is null');
+              return;
+            }
+            columnelt.innerHTML = '';
+          }
+        }
+
+        async function addAdditionalRandomImages(url, clientid, additionalImagesOnScroll) {
+          addImagesToGrid(await getRandomImages(url, clientid, curOrientation, additionalImagesOnScroll));
+          curOffset += additionalImagesOnScroll;           
+        }                  
+        async function addAdditionalSearchImages(url, clientid, additionalImagesOnScroll) {
+          const page = Math.floor(curOffset / additionalImagesOnScroll) + 1;
+          const results = await searchImages(url, clientid, curQuery, curOrientation, page, additionalImagesOnScroll);
+          addImagesToGrid(results.results);
+          curOffset += additionalImagesOnScroll;           
+        }
+        
+        function onClickImage(event) {
+          ui.dialog.close(event.target.getAttribute('data-unsplash'));
+        }        
+
+        document.addEventListener('DOMContentLoaded', async () => {
+
+          var elems_radio = document.querySelectorAll('select');
+          var instances_radio = M.FormSelect.init(elems_radio, {});
+
+          try {
+            ui = await UiExtension.register();
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+
+          const config = JSON.parse(ui.extension.config);
+          const unsplashRandomUrl = config.unsplashRandomUrl || 'https://api.unsplash.com/photos/random';
+          const unsplashSearchUrl = config.unsplashSearchUrl || 'https://api.unsplash.com/search/photos';
+          const clientId = config.cliendId;
+
+          const random = await getRandomImages(unsplashRandomUrl, clientId, curOrientation, initialImages);
+          addImagesToGrid(random);
+          curOffset += initialImages;
+
+          document.addEventListener('scroll', async function(event) {
+            const scrollposition = window.innerHeight + window.scrollY;
+            const scrollheight = document.body.scrollHeight;
+            if (!busyAddingImages && scrollheight - scrollposition < 200) {
+              busyAddingImages = true;
+              if (curQuery === '') {
+                await addAdditionalRandomImages(unsplashRandomUrl, clientId, additionalImages);
+              } else {
+                await addAdditionalSearchImages(unsplashSearchUrl, clientId, additionalImages);
+              }
+              busyAddingImages = false;
+            }
+          });
+
+          const searchinputelt = document.getElementById('search_input');
+          searchinputelt.addEventListener('keyup', async function(event) {
+            if (event.key === 'Enter') {
+              curQuery = searchinputelt.value;
+
+              clearImageGrid();
+              let results;
+              if (curQuery === '') {
+                results = await getRandomImages(unsplashRandomUrl, clientId, curOrientation, initialImages);
+              } else {
+                results = await searchImages(unsplashSearchUrl, clientId, curQuery, curOrientation, 1, initialImages);
+                results = results.results;
+                console.log(results);
+              }
+              addImagesToGrid(results);
+              curOffset += initialImages;           
+            }
+          });
+          
+          const selectorientationelt = document.getElementById('orientation_select');
+          selectorientationelt.addEventListener('change', async function(event) {
+            curOrientation = selectorientationelt.options[selectorientationelt.selectedIndex].value;
+
+            clearImageGrid();
+            let results;
+            if (curQuery === '') {
+              results = await getRandomImages(unsplashRandomUrl, clientId, curOrientation, initialImages);
+            } else {
+              results = await searchImages(unsplashSearchUrl, clientId, curQuery, curOrientation, 1, initialImages);
+              results = results.results;
+              console.log(results);
+            }
+            addImagesToGrid(results);
+            curOffset += initialImages;           
+          });
+
+        });   
+
+      })();
+    </script>
+
+    <!--JavaScript at end of body for optimized loading-->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js'></script>    
+  </body>
+</html>

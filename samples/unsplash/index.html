@@ -1,0 +1,186 @@
+<!--
+  Copyright 2019 Bloomreach B.V. (http://www.bloomreach.com)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>BloomReach Unsplash Extension</title>
+
+    <style>
+      html, body {
+        /* blend with the surrounding editor */
+        background-color: transparent;
+      }
+      body, pre {
+        margin: 0;
+      }
+
+      #open-dialog-button {
+        margin: 5px 0 8px 5px;
+        display: none;
+        padding: 5px;
+        border-radius: 3px;
+      }
+
+      .image {
+        max-width: 200px;
+        max-height: 200px;
+        padding: 5px;
+        margin: 5px 0 5px 5px;
+      }
+      .image__editing:hover {
+        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
+        opacity: 0.5;
+      }
+      .image__added {
+        border: 6px solid rgb(0, 255, 0, 0.25);
+        border-radius: 0;
+        padding: 0;
+      }
+      .image__removed {
+        border: 6px solid rgb(255, 0, 0, 0.25);
+        border-radius: 0;
+        padding: 0;
+      }
+    </style>
+
+    <script src="https://unpkg.com/@bloomreach/ui-extension@13.2.0/dist/ui-extension.min.js"></script>    
+    
+    <script>
+      ((ui, mode) => {
+        //Enum for compare mode scenarios
+        const ImageActions = {
+          Added: 'added',
+          Removed: 'removed',
+          None: 'none',
+        };
+
+        function deserialize(value) {
+          return (value && JSON.parse(value)) || '';
+        }
+
+        function serialize(value) {
+          return value.length ? JSON.stringify(value) : '';
+        }
+
+        async function init() {
+          try {
+            ui = await UiExtension.register();
+            ({ mode } = await ui.document.get());
+
+            initDialogButton();
+            updatePreview();
+            ui.document.field.setHeight('auto');
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        }
+
+        async function initDialogButton() {
+          const buttonElement = document.getElementById('open-dialog-button');
+          if (mode !== 'edit') {
+            buttonElement.style.display = 'none';
+            return;
+          }
+
+          const curvalue = await ui.document.field.getValue();
+          const options = {
+            title: 'Unsplash',
+            url: './dialog.html',
+            size: 'large',
+            value: curvalue,
+          };
+
+          buttonElement.style.display = 'block';
+          buttonElement.addEventListener('click', () => showDialog(options));
+        }
+
+        async function showDialog(options) {
+          try {
+            const curvalue = await ui.document.field.getValue();
+            options.value = curvalue;
+            const newvalue = await ui.dialog.open(options);
+            await ui.document.field.setValue(newvalue);
+            await updatePreview();
+          } catch (error) {
+            if (error.code === 'DialogCanceled') {
+              return;
+            }
+
+            console.error('Error after open dialog: ', error.code, error.message);
+          }
+        }
+
+        async function updatePreview() {
+          var container = document.getElementById('imported-image');
+          container.innerHTML = ''; //reset preview div
+
+          const image = deserialize(await ui.document.field.getValue());
+
+          if (mode === 'compare') {
+            const compare = deserialize(await ui.document.field.getCompareValue());
+            if (compare === image && image !== '') makeThumbnail(ImageActions.None, container, image);
+            else {
+              if (compare !== '') makeThumbnail(ImageActions.Removed, container, compare);
+              if (image !== '') makeThumbnail(ImageActions.Added, container, image);
+            }
+            return;
+          }
+
+          if (image !== '') makeThumbnail(ImageActions.None, container, image);
+        }
+
+        function makeThumbnail(action, container, image) {
+          const img = document.createElement('img');
+          img.className = 'image';
+          img.src = image.urls.thumb;
+
+          if (mode === 'edit') {
+            img.classList.add('image__editing');
+            img.addEventListener('click', async () => {
+              await removeImage(image);
+              container.removeChild(img);
+            });
+          }
+
+          if (mode === 'compare') {
+            img.classList.add({
+              [ImageActions.Added]: 'image__added',
+              [ImageActions.Removed]: 'image__removed',
+              [ImageActions.None]: 'image__unchanged',
+            }[action]);
+          }
+
+          container.appendChild(img);
+        }
+
+        async function removeImage() {
+          await ui.document.field.setValue('');
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+      })();
+    </script>
+  </head>
+  <body>
+    <button id="open-dialog-button">Select image</button>
+    <div id="imported-image"></div>
+  </body>
+</html>
