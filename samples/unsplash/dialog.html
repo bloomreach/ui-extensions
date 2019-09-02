@@ -208,8 +208,8 @@
           const config = JSON.parse(ui.extension.config);
           const unsplashRandomUrl = config.unsplashRandomUrl || 'https://api.unsplash.com/photos/random';
           const unsplashSearchUrl = config.unsplashSearchUrl || 'https://api.unsplash.com/search/photos';
-          if (config.clientId === undefined) console.error("No client ID configured!");
           const clientId = config.clientId || '';
+          if (clientId === '') console.error("No client ID configured!");
 
           const random = await getRandomImages(unsplashRandomUrl, clientId, curOrientation, initialImages);
           addImagesToGrid(random);
@@ -241,7 +241,6 @@
               } else {
                 results = await searchImages(unsplashSearchUrl, clientId, curQuery, curOrientation, 1, initialImages);
                 results = results.results;
-                console.log(results);
               }
               addImagesToGrid(results);
               curOffset += initialImages;           
@@ -259,7 +258,6 @@
             } else {
               results = await searchImages(unsplashSearchUrl, clientId, curQuery, curOrientation, 1, initialImages);
               results = results.results;
-              console.log(results);
             }
             addImagesToGrid(results);
             curOffset += initialImages;           

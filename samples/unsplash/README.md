@@ -2,6 +2,8 @@
 
 This UI Extension integrates Bloomreach Experience with Unsplash, a source of freely useable stock images. It leverages the official Unsplash API to browse images and use these within Bloomreach powered sites.
 
+![Unsplash Integration](unsplash.gif)
+
 ## How does the UI Extension work?
 
 From a Bloomreach document, a picker dialog can be opened that interacts with Unsplash. The initial view shows random images, and a query can be executed to search images for a certain topic. Searches can be filtered for landscape, portrait or square images. After selecting an image, a reference data object is stored in the Bloomreach document. Sites can then use these references to add the selected image to a page.
