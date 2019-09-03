@@ -48,6 +48,13 @@ You can now start using the plugin in your documents.
 
 You can now start using the Unsplash image object reference that is stored in your document to render the image in your frontend template(s). More details about the different image variants and how to manipulate the image can be found [here](https://unsplash.com/documentation#dynamically-resizable-images).
 
+Using an image from Unsplash is subject to the Unsplash license which can be found [here](https://unsplash.com/license). While attributing Unsplash and the Unsplash photographer isn't required by license, "_it's a key part of the Unsplash ecosystem as photographers rely on the exposure gained from their work being seen by millions of people_". See also [this page](https://help.unsplash.com/en/articles/2511315-guideline-attribution).
+
+Unsplash recommends the following attribution, in HTML:
+
+`Photo by <a href="https://unsplash.com/@anniespratt?utm_source=your_app_name&utm_medium=referral">Annie Spratt</a> on <a href="https://unsplash.com/?utm_source=your_app_name&utm_medium=referral">Unsplash</a>`
+
+
 ## Resources
 
 - [Bloomreach UI Extensions Documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html)
