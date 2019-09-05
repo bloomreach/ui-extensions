@@ -1,6 +1,6 @@
 # Bynder UI Extension for Bloomreach Experience
 
-This UI Extension integrates Bloomreach Experience with Bynder's digital asset management platform. It leverages Bynder's compact view component to browse media from Bynder and use these within Bloomreach powered sites.
+This UI Extension integrates Bloomreach Experience with Bynder's digital asset management platform. It leverages Bynder's Compact View component to browse media from Bynder and use these within Bloomreach powered sites.
 
 ![Bynder Integration](Bynder.gif)
 The Bynder UI Extension in action
@@ -10,15 +10,17 @@ The Bynder UI Extension in action
 From a Bloomreach document, a picker dialog can be opened that loads Bynder's compact view. On first use, this dialog asks the user for a username and password to authenticate with Bynder. The dialog can then be used to browse and select media, for which references are stored in the Bloomreach document. Sites can then use these references to add the selected media to pages.
 
 ## Requirements
+
 - A Bloomreach Experience Manager (brXM) project running on version 13.2.0 or above.
 - An account with Bynder with access to a brand portal (yourDomain.getbynder.com).
 
 ## Use the Bynder UI Extension in your brXM project
 
 ### Step 1: Configure the extension in brXM
+
 Open the console of your brXM instance and browse to the node `/hippo:configuration/hippo:frontend/cms/ui-extensions`. Then import the following YAML snippet:
 
-```
+```yaml
 /bynder:
   jcr:primaryType: frontend:uiExtension
   frontend:config: '{"dataMode":"single", "dataAssetTypes":"image","dataDefaultEnvironment":"https://yourDomain.getbynder.com"}'
@@ -47,8 +49,8 @@ You can now start using the Bynder references that are stored in your documents 
 
 To be able to add images directly into rich text fields, a Bynder CKEditor plugin is needed. A sample implementation of such as plugin is included in this repository [here](./ckeditor).
 
-
 ## Resources
+
 - [Bloomreach UI Extensions Documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html)
 - [Compact View on the Bynder Knowledge Base](https://help.bynder.com/system/compact-view.htm)
 - [Compact View in the Bynder Developer Documentation](https://developer-docs.bynder.com/UI%20components/)
