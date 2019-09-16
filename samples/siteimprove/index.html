@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SiteImprove Extension</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" type="text/css" href="style.css">    
+
+    <!--Include UI Extension library and Siteimprove overlay-->
+    <script src="https://unpkg.com/@bloomreach/ui-extension@13.2.0/dist/ui-extension.min.js"></script>
+    <script src="https://cdn.siteimprove.net/cms/overlay.js"></script>
+</head>
+<body>
+    <iframe id="myframe" src="loading.html" class="frame"></iframe>
+    <script>
+      (() => {
+        let ui;
+        let currentPageUrl = "";
+        const overlayUrl = 'https://my2.siteimprove.com/overlay/cms/cmspage';
+        const loginUrl = "https://my2.siteimprove.com/overlay/cms/close";
+        const myframe = document.getElementById("myframe");
+        const _si = window._si || [];
+
+        async function initExtension() {
+          try {
+          ui = await UiExtension.register();
+
+          //Check if user is logged in
+          checkLogin().then (
+            resolved => {
+              updateIframe(overlayUrl);
+            },
+            reject => {
+              var loginwindow = showLoginWindow('Siteimprove Login', 580, 750);
+              handleLogin(loginwindow);
+            }
+          );  
+
+          ui.channel.page.get().then(pushUrlToSiteImprove);
+          ui.channel.page.on('navigate', pushUrlToSiteImprove);
+          ui.channel.on('changes.publish', recheckPage)
+
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        }
+        
+        var handleLogin = function (loginWindow) {
+          setTimeout(function() {
+            checkLogin().then (
+              resolved => {
+              closeLoginWindow(loginWindow);
+              updateIframe(overlayUrl);
+              return;
+            },
+            rejected => {
+              handleLogin(loginWindow);
+            });
+          }, 200);
+        }  
+        
+        function pushUrlToSiteImprove(page) {
+
+          //Store url of current page
+          currentPageUrl = page.url;
+
+          //replace scheme to use https
+          currentPageUrl = currentPageUrl.replace("http://", "https://");
+
+          var _si = window._si || [];
+          _si.push(['input', currentPageUrl, '9c81c02163054dfc875a14f35ec384f8', function() { 
+              console.log('Inputted page specific url to Siteimprove: ' + currentPageUrl); 
+            }
+          ])
+        }
+
+        function recheckPage() {
+          _si.push(['recheck', currentPageUrl,'9c81c02163054dfc875a14f35ec384f8', function() { console.log('Recheck ordered'); }])
+        }
+
+        function checkLogin() {
+          var GET = (url, callback) => {
+            var req = new XMLHttpRequest();
+            req.open("GET", url);
+            req.onreadystatechange = () => {
+              if (req.readyState == 4) {
+                callback(req);
+              }
+            };
+            req.withCredentials = true;
+            req.setRequestHeader("Accept", "application/json");
+            req.send();
+          };
+          return new Promise(function (resolve, reject) {
+            GET("https://my2.siteimprove.com/overlay/cms/close", (req) => {
+              if (req.status === 200 && req.responseURL.toLowerCase().includes("/overlay/cms/close")) {
+                resolve(true);
+              } else {
+                reject(false);
+              }
+            });
+          });
+        }
+
+        var updateIframe = function (url) {
+          myframe.src = url;
+        }
+
+        var showLoginWindow = function (title, width, height) {
+          var dualScreenLeft = window.screenLeft != undefined ? window.screenLeft : screen.left;
+          var dualScreenTop = window.screenTop != undefined ? window.screenTop : screen.top;
+
+          var windowWidth = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;
+          var windowHeight = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
+
+          var left = ((windowWidth / 2) - (width / 2)) + dualScreenLeft;
+          var top = ((windowHeight / 2) - (height / 2)) + dualScreenTop;
+          left = ((screen.width / 2) - (width / 2));
+          top = ((screen.height / 2) - (height / 2));
+          return window.open(loginUrl, title, 'scrollbars=no,toolbar=no,width=' + width + ',height=' + height + ',top=' + top + ',left=' + left);
+        }
+
+        var closeLoginWindow = function (loginwindow) {
+          loginwindow.close();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+          initExtension();
+        });
+      })();    
+    </script>
+</body>
+</html>
