@@ -5,7 +5,25 @@
     <meta charset="utf-8">
     <title>SiteImprove Extension</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <link rel="stylesheet" type="text/css" href="style.css">    
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        vertical-align: middle;
+      }
+
+      .frame {
+        display: block;
+        width: 100%;
+        height: 100vh;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0 none;
+        box-sizing: border-box;
+      }    
+    </style>
 
     <!--Include UI Extension library and Siteimprove overlay-->
     <script src="https://unpkg.com/@bloomreach/ui-extension@13.2.0/dist/ui-extension.min.js"></script>
@@ -16,30 +34,30 @@
     <script>
       (() => {
         let ui;
-        let currentPageUrl = "";
-        const overlayUrl = 'https://my2.siteimprove.com/overlay/cms/cmspage';
-        const loginUrl = "https://my2.siteimprove.com/overlay/cms/close";
+        let currentPageUrl = '';
+        const overlayUrl = 'https://my2.siteimprove.com/overlay/cms/cmspage?url=';
+        const loginUrl = 'https://my2.siteimprove.com/overlay/cms/close';
         const myframe = document.getElementById("myframe");
         const _si = window._si || [];
 
         async function initExtension() {
           try {
-          ui = await UiExtension.register();
+            ui = await UiExtension.register();
 
-          //Check if user is logged in
-          checkLogin().then (
-            resolved => {
-              updateIframe(overlayUrl);
-            },
-            reject => {
-              var loginwindow = showLoginWindow('Siteimprove Login', 580, 750);
-              handleLogin(loginwindow);
-            }
-          );  
+            //Check if user is logged in
+            checkLogin().then (
+              resolved => {},
+              reject => {
+                var loginwindow = showLoginWindow('Siteimprove Login', 580, 750);
+                handleLogin(loginwindow);
+              }
+            );
 
-          ui.channel.page.get().then(pushUrlToSiteImprove);
-          ui.channel.page.on('navigate', pushUrlToSiteImprove);
-          ui.channel.on('changes.publish', recheckPage)
+            ui.channel.page.get().then(pushUrlToSiteImprove);
+            ui.channel.page.on('navigate', pushUrlToSiteImprove);
+            ui.channel.on('changes.publish', recheckPage)
+
+            myframe.onload = hideToggleContainer;
 
           } catch(error) {
             console.error('Failed to register extension:', error.message);
@@ -51,24 +69,22 @@
           setTimeout(function() {
             checkLogin().then (
               resolved => {
-              closeLoginWindow(loginWindow);
-              updateIframe(overlayUrl);
-              return;
-            },
-            rejected => {
-              handleLogin(loginWindow);
-            });
+                closeLoginWindow(loginWindow);
+                return;
+              },
+              rejected => {
+                handleLogin(loginWindow);
+              }
+            );
           }, 200);
         }  
         
         function pushUrlToSiteImprove(page) {
 
-          //Store url of current page
           currentPageUrl = page.url;
-
-          //replace scheme to use https
           currentPageUrl = currentPageUrl.replace("http://", "https://");
 
+          updateIframe(overlayUrl + currentPageUrl);
           var _si = window._si || [];
           _si.push(['input', currentPageUrl, '9c81c02163054dfc875a14f35ec384f8', function() { 
               console.log('Inputted page specific url to Siteimprove: ' + currentPageUrl); 
@@ -105,7 +121,17 @@
         }
 
         var updateIframe = function (url) {
+          console.log("updating iframe: " + url);
           myframe.src = url;
+        }
+
+        var hideToggleContainer = function () {
+          const toggleContainer = document.getElementsByClassName("si-toggle-container");
+          if (toggleContainer.length === 0) {
+            console.error("Unable to hide toggleContainer: element not found");
+          } else {
+            toggleContainer[0].style.display = "none";  
+          }
         }
 
         var showLoginWindow = function (title, width, height) {

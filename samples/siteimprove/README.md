@@ -1,6 +1,8 @@
 # Siteimprove UI Extension for Bloomreach Experience
 
-This UI Extension integrates Bloomreach Experience with Siteimprove. Siteimprove's all-in-one software helps you perfect your digital presence and turn it into the asset it was meant to be. The integration leverages the Siteimprove CMS plugin.
+This UI Extension integrates Bloomreach Experience with Siteimprove. Siteimprove's all-in-one software helps you perfect your digital presence by offering fully automated website checks, performance metrics, industry benchmarks, and automated reporting. This integration leverages the Siteimprove CMS plugin, designed to embed insights directly into a CMS UI.
+
+![Siteimprove Integration](./siteimprove.gif)
 
 ## How does the UI Extension work?
 
