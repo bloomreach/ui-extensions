@@ -44,7 +44,6 @@
           try {
             ui = await UiExtension.register();
 
-            //Check if user is logged in
             checkLogin().then (
               resolved => {},
               reject => {
@@ -57,43 +56,10 @@
             ui.channel.page.on('navigate', pushUrlToSiteImprove);
             ui.channel.on('changes.publish', recheckPage)
 
-            myframe.onload = hideToggleContainer;
-
           } catch(error) {
             console.error('Failed to register extension:', error.message);
             console.error('- error code:', error.code);
           }
-        }
-        
-        var handleLogin = function (loginWindow) {
-          setTimeout(function() {
-            checkLogin().then (
-              resolved => {
-                closeLoginWindow(loginWindow);
-                return;
-              },
-              rejected => {
-                handleLogin(loginWindow);
-              }
-            );
-          }, 200);
-        }  
-        
-        function pushUrlToSiteImprove(page) {
-
-          currentPageUrl = page.url;
-          currentPageUrl = currentPageUrl.replace("http://", "https://");
-
-          updateIframe(overlayUrl + currentPageUrl);
-          var _si = window._si || [];
-          _si.push(['input', currentPageUrl, '9c81c02163054dfc875a14f35ec384f8', function() { 
-              console.log('Inputted page specific url to Siteimprove: ' + currentPageUrl); 
-            }
-          ])
-        }
-
-        function recheckPage() {
-          _si.push(['recheck', currentPageUrl,'9c81c02163054dfc875a14f35ec384f8', function() { console.log('Recheck ordered'); }])
         }
 
         function checkLogin() {
@@ -120,20 +86,20 @@
           });
         }
 
-        var updateIframe = function (url) {
-          console.log("updating iframe: " + url);
-          myframe.src = url;
+        var handleLogin = function (loginWindow) {
+          setTimeout(function() {
+            checkLogin().then (
+              resolved => {
+                closeLoginWindow(loginWindow);
+                return;
+              },
+              rejected => {
+                handleLogin(loginWindow);
+              }
+            );
+          }, 200);
         }
-
-        var hideToggleContainer = function () {
-          const toggleContainer = document.getElementsByClassName("si-toggle-container");
-          if (toggleContainer.length === 0) {
-            console.error("Unable to hide toggleContainer: element not found");
-          } else {
-            toggleContainer[0].style.display = "none";  
-          }
-        }
-
+        
         var showLoginWindow = function (title, width, height) {
           var dualScreenLeft = window.screenLeft != undefined ? window.screenLeft : screen.left;
           var dualScreenTop = window.screenTop != undefined ? window.screenTop : screen.top;
@@ -150,9 +116,42 @@
 
         var closeLoginWindow = function (loginwindow) {
           loginwindow.close();
+        }        
+        
+        function pushUrlToSiteImprove(page) {
+
+          currentPageUrl = page.url;
+          currentPageUrl = currentPageUrl.replace("http://", "https://");
+
+          updateIframe(overlayUrl + currentPageUrl);
+          var _si = window._si || [];
+          _si.push(['input', currentPageUrl, '9c81c02163054dfc875a14f35ec384f8', function() { 
+              console.log('Inputted page specific url to Siteimprove: ' + currentPageUrl); 
+            }
+          ])
         }
 
+        function recheckPage() {
+          _si.push(['recheck', currentPageUrl,'9c81c02163054dfc875a14f35ec384f8', function() { console.log('Recheck ordered'); }])
+        }
+
+        var updateIframe = function (url) {
+          myframe.src = url;
+        }
+
+        var hideToggleContainer = function () {
+          setTimeout(function() {
+            const toggleContainer = document.getElementsByClassName("si-toggle-container");
+            if (toggleContainer.length != 0) {
+              toggleContainer[0].style.display = "none";
+            } else {
+              hideToggleContainer();
+            }
+          }, 100);          
+        }      
+
         document.addEventListener('DOMContentLoaded', function() {
+          hideToggleContainer();
           initExtension();
         });
       })();    
