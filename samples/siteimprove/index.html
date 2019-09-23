@@ -36,22 +36,13 @@
         let ui;
         let currentPageUrl = '';
         const overlayUrl = 'https://my2.siteimprove.com/overlay/cms/cmspage?url=';
-        const loginUrl = 'https://my2.siteimprove.com/overlay/cms/close';
         const myframe = document.getElementById("myframe");
-        const _si = window._si || [];
 
         async function initExtension() {
           try {
             ui = await UiExtension.register();
 
-            checkLogin().then (
-              resolved => {},
-              reject => {
-                var loginwindow = showLoginWindow('Siteimprove Login', 580, 750);
-                handleLogin(loginwindow);
-              }
-            );
-
+            console.log("setting up events");
             ui.channel.page.get().then(pushUrlToSiteImprove);
             ui.channel.page.on('navigate', pushUrlToSiteImprove);
             ui.channel.on('changes.publish', recheckPage)
@@ -85,20 +76,6 @@
             });
           });
         }
-
-        var handleLogin = function (loginWindow) {
-          setTimeout(function() {
-            checkLogin().then (
-              resolved => {
-                closeLoginWindow(loginWindow);
-                return;
-              },
-              rejected => {
-                handleLogin(loginWindow);
-              }
-            );
-          }, 200);
-        }
         
         var showLoginWindow = function (title, width, height) {
           var dualScreenLeft = window.screenLeft != undefined ? window.screenLeft : screen.left;
@@ -111,7 +88,7 @@
           var top = ((windowHeight / 2) - (height / 2)) + dualScreenTop;
           left = ((screen.width / 2) - (width / 2));
           top = ((screen.height / 2) - (height / 2));
-          return window.open(loginUrl, title, 'scrollbars=no,toolbar=no,width=' + width + ',height=' + height + ',top=' + top + ',left=' + left);
+          return window.open("https://my2.siteimprove.com/overlay/cms/close", title, 'scrollbars=no,toolbar=no,width=' + width + ',height=' + height + ',top=' + top + ',left=' + left);
         }
 
         var closeLoginWindow = function (loginwindow) {
@@ -119,7 +96,7 @@
         }        
         
         function pushUrlToSiteImprove(page) {
-
+          console.log("pushing url");
           currentPageUrl = page.url;
           currentPageUrl = currentPageUrl.replace("http://", "https://");
 
@@ -132,6 +109,7 @@
         }
 
         function recheckPage() {
+          var _si = window._si || [];
           _si.push(['recheck', currentPageUrl,'9c81c02163054dfc875a14f35ec384f8', function() { console.log('Recheck ordered'); }])
         }
 
@@ -148,11 +126,28 @@
               hideToggleContainer();
             }
           }, 100);          
-        }      
+        }
+
+        var handleLoginandInit = function (loginWindow = null) {
+          setTimeout(function() {
+            checkLogin().then (
+              resolved => {
+                if (loginWindow) closeLoginWindow(loginWindow);
+                initExtension();
+                return;
+              },
+              rejected => {
+                if (!loginWindow) loginWindow = showLoginWindow('Siteimprove Login', 580, 750);
+                handleLoginandInit(loginWindow);
+              }
+            );
+          }, 200);
+        }              
 
         document.addEventListener('DOMContentLoaded', function() {
           hideToggleContainer();
-          initExtension();
+          console.log("check login");
+          handleLoginandInit();
         });
       })();    
     </script>
