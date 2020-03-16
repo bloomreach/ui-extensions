@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>BloomReach Location Picker Dialog</title>
+
+    <script src="https://unpkg.com/@bloomreach/ui-extension@13.2.0/dist/ui-extension.min.js"></script>
+    <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.1.0/build/ol.js"></script>
+    <style type="text/css">
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+        }
+        .flex-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+        .flex-container-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .h100 {
+            height: 100%;
+        }
+        .h80 {
+            height: 80%;
+        }
+        .h20 {
+            height: 20%;
+        }
+        .result {
+            align-items: center;
+            flex: 1;
+        }
+        #map {
+            width: 70%;
+            height: 100%;
+            margin: 0;
+        }
+        #searchBar {
+            width: 30%;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+        }
+        #data {
+            flex: 1;
+            margin: 5px;
+        }
+        #suggestions-wrapper {
+            height: 100%;
+            flex: 1;
+            overflow-y: scroll;
+        }
+        #suggestions {
+            padding-left: 0px;
+        }
+        #addLocation {
+            margin: auto;
+            margin-right: 15px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        ul#suggestions > li {
+            list-style-position: inside;
+            list-style: none;
+            padding: 5px;
+/*             border-top: 1px solid grey; */
+        }
+        ul#suggestions > li:last-child {
+            border-bottom: 1px solid grey;
+        }
+        ul#suggestions > li:hover {
+            background: lightsteelblue;
+            cursor: pointer;
+        }
+        label {
+            margin-left: 5%;
+        }
+        #searchTerm {
+            margin-top: 5%;
+            margin-bottom: 5%;
+            margin-left: 5%;
+            width: 70%;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="flex-container-col h100">
+        <div class="flex-container h80">
+            <div id="searchBar">
+                <form id="searchform" onsubmit="searchByAddress(event)">
+                    <label for="searchTerm">Search:</label>
+                    <input id="searchTerm" />
+                </form>
+                <div id="suggestions-wrapper">
+                    <ul id="suggestions"></ul>
+                </div>
+            </div>
+            <div id="map"></div>
+        </div>
+        <div class="flex-container h20">
+            <div class="flex-container result">
+                <label for="data">Result:</label>
+                <textarea id="data"></textarea>
+            </div>
+            <button id="addLocation">Add Location</button>
+        </div>
+    </div>
+    <script>
+        var places = [];
+        
+        var currentPlace = {};
+        
+        var markers = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                features: []
+            }),
+            style: new ol.style.Style({
+                image: new ol.style.Icon({
+                anchor: [0.5, 46],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'pixels',
+                src: 'https://openlayers.org/en/latest/examples/data/icon.png'
+                })
+            })
+        });
+        
+        class Place {
+            constructor(address,longitude,latitude) {
+                this.address = address;
+                this.longitude = longitude;
+                this.latitude = latitude;
+            }
+        }
+        
+        function initLocation(options) {
+            var initialPosition= {
+                latitude: 52.3593827,
+                longitude: 4.8994339
+            };
+            if (options && options.value) {
+                var value = JSON.parse(options.value);
+            }
+            
+            if (value.latitude && value.longitude) {
+                initialPosition.latitude = value.latitude;
+                initialPosition.longitude = value.longitude;
+                currentPlace = value;
+                var data = document.getElementById("data");
+                data.value = value.address;
+                setMarker(value.longitude, value.latitude);
+            } else if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position){
+                    initialPosition.latitude = position.coords.latitude;
+                    initialPosition.longitude = position.coords.longitude;
+                });
+            } else {
+                x.innerHTML = "Geolocation is not supported by this browser.";
+            }
+            return initialPosition;
+        }
+        
+        function searchByAddress(event) {
+            event.preventDefault();
+            var inputField = document.getElementById("searchTerm");
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var results = JSON.parse(xhttp.responseText);
+                    places = [];
+                    var suggestionsList = document.getElementById("suggestions");
+                    suggestionsList.innerHTML = ""
+                    results.forEach(function(result, index) {
+                        var place = new Place(result.display_name, result.lon, result.lat);
+                        places.push(place);
+                        var element = document.createElement("li");
+                        element.innerHTML = place.address;
+                        element.addEventListener("click", function() {updatePosition(place);}, false);
+                        suggestionsList.append(element);
+                        });
+                }
+            };
+            xhttp.open("GET", "https://nominatim.openstreetmap.org/search/" + inputField.value + "?format=json", true);
+            xhttp.send();
+        }
+        
+        function searchByCoordinates(coordinates) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var result = JSON.parse(xhttp.responseText);
+                    var place = new Place(result.display_name, result.lon, result.lat);
+                    updatePosition(place);
+                }
+            };
+            xhttp.open("GET", "https://nominatim.openstreetmap.org/reverse?lat=" + coordinates[1] + "&lon=" + coordinates[0] + "&format=json", true);
+            xhttp.send();
+        }
+        
+        function updatePosition(place) {
+            currentPlace = place;
+            var data = document.getElementById("data");
+            data.value = place.address;
+            var newPos = new ol.proj.fromLonLat([place.longitude,place.latitude]);
+            map.getView().setCenter(newPos);
+            setMarker(place.longitude,place.latitude)
+        }
+        
+        function setMarker(longitude, latitude) {
+            var marker = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat([longitude, latitude])),
+                name: 'Current Marker'
+            });
+            markers.setSource(new ol.source.Vector({
+                features: [marker]
+            }));
+        }
+    
+      (ui => {
+        document.addEventListener('DOMContentLoaded', async () => {
+          try {
+            ui = await UiExtension.register();
+            const options = await ui.dialog.options(); 
+
+            var initialPosition = initLocation(options);
+            
+            var raster = new ol.layer.Tile({
+                source: new ol.source.OSM()
+            });
+            
+            map = new ol.Map({
+                //controls: ol.control.defaults({attribution: false}).extend([attribution]),
+                target: 'map',
+                layers: [raster, markers],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([initialPosition.longitude, initialPosition.latitude]),
+                    zoom: 15
+                })
+            });
+            
+            //add click listener
+            map.on('singleclick', function(e) {
+                //transform from the map system to the decimal longitude-latitude system
+                var coordinates = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
+                searchByCoordinates(coordinates);
+            });
+
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        });
+        
+        document.getElementById('addLocation').addEventListener('click', function(e) {
+          if (ui == null) {
+            console.log("UI Extension not properly registered");
+            return;
+          }
+
+          // The selected assets go in the event detail property
+          var address = document.getElementById("data").value;
+          currentPlace.address = address;
+          ui.dialog.close(JSON.stringify(currentPlace));
+        });
+      })();
+    </script>
+  </body>
+</html>
