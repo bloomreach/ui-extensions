@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>BloomReach Location Picker</title>
+
+    <style>
+      html, body {
+        /* blend with the surrounding editor */
+        background-color: transparent;
+      }
+      body, pre {
+        margin: 0;
+      }
+
+      #open-dialog-button {
+        margin: 5px 0 8px 5px;
+        display: none;
+        padding: 5px;
+        border-radius: 3px;
+      }
+      
+      span.added {
+        background: rgb(0, 255, 0, 0.25);
+      }
+      span.removed {
+        background: rgb(255, 0, 0, 0.25);
+        text-decoration: line-through;
+      }
+
+    </style>
+
+    <script src="https://unpkg.com/@bloomreach/ui-extension@13.2.0/dist/ui-extension.min.js"></script>    
+    
+    <script>
+      ((ui, mode) => {
+        //Enum for compare mode scenarios
+        const AssetActions = {
+          Added: 'added',
+          Removed: 'removed',
+          None: 'none',
+        };
+
+        function deserialize(value) {
+          return (value && JSON.parse(value)) || [];
+        }
+
+        function serialize(value) {
+          return value.length ? JSON.stringify(value) : '';
+        }
+
+        async function init() {
+          try {
+            ui = await UiExtension.register();
+            ({ mode } = await ui.document.get());
+
+            initDialogButton();
+            updatePreview();
+            ui.document.field.setHeight('auto');
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        }
+
+        async function initDialogButton() {
+          const buttonElement = document.getElementById('open-dialog-button');
+          if (mode !== 'edit') {
+            buttonElement.style.display = 'none';
+            return;
+          }
+
+          var value = await ui.document.field.getValue();
+          const options = {
+            title: 'Location Picker',
+            url: './dialog.html',
+            size: 'large',
+            value: serialize(value),
+          };
+
+          buttonElement.style.display = 'block';
+          buttonElement.addEventListener('click', () => showDialog(options));
+        }
+
+        async function showDialog(options) {
+          try {
+            const curvalue = await ui.document.field.getValue();
+            options.value = curvalue;
+            const newvalue = await ui.dialog.open(options);
+            await ui.document.field.setValue(newvalue);
+            await updatePreview();
+          } catch (error) {
+            if (error.code === 'DialogCanceled') {
+              return;
+            }
+
+            console.error('Error after open dialog: ', error.code, error.message);
+          }
+        }
+        
+        function printProperty(name, oldValue, newValue, container) {
+            var text = "";
+            if (oldValue === newValue) {
+                text = name + ": " + newValue + "</br>";
+            } else {
+                text = name + ": <span class='removed' >" + oldValue + "</span><span class='added' />" + newValue + "</span></br>";
+            }
+            
+            container.innerHTML += text;
+        }
+
+        async function updatePreview() {
+            
+            var value = deserialize(await ui.document.field.getValue());
+            var container = document.getElementById('location');
+            if (mode === 'edit' || mode === 'view') {
+                container.innerHTML = "Address: " + value.address + "</br>Lat: " + value.latitude + "</br>Lon: " + value.longitude;            
+            }
+            
+            
+            if (mode === 'compare') {
+                container.innerHTML = "";
+                const old = deserialize(await ui.document.field.getCompareValue());
+                printProperty("Address", old.address, value.address, container);
+                printProperty("Latitude", old.latitude, value.latitude, container);
+                printProperty("Longitude", old.longitude, value.longitude, container);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+      })();
+    </script>
+  </head>
+  <body>
+    <button id="open-dialog-button">Select Location</button>
+    <div id="location"></div>
+  </body>
+</html>
