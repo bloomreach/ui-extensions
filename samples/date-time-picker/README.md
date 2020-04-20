@@ -1,7 +1,7 @@
 ## Date-Time-Picker
 OpenUI extension for picking date and time in brXM cms document fields. It uses [this datetimepicker lib](http://jquense.github.io/react-widgets/api/DateTimePicker/)
 
-
+Source code is at https://code.onehippo.org/sandbox/openui-datetimepicker
 ### Install
 
 *  Add the extension configuration at /hippo:configuration/hippo:frontend/cms/ui-extensions/:
@@ -15,7 +15,7 @@ OpenUI extension for picking date and time in brXM cms document fields. It uses 
   frontend:displayName: DateTimePicker
   frontend:extensionPoint: document.field
   frontend:initialHeightInPixels: 400
-  frontend:url: http://https://bloomreach.github.io/ui-extensions/samples/date-time-picker/build/
+  frontend:url: https://bloomreach.github.io/ui-extensions/samples/date-time-picker/build/
 ```
 
 * Then [Add this extension to a document type](https://documentation.bloomreach.com/library/concepts/open-ui/configure-a-document-field-extension.html)
