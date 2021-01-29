@@ -29,7 +29,7 @@ Open the console of your brXM instance and browse to the node `/hippo:configurat
   frontend:url: https://bloomreach.github.io/ui-extensions/samples/bynder/
 ```
 
-The config property holds a JSON object that (partly) controls the behavior of the Bynder Compact View module. The value of the 'dataDefaultEnvironment' should always be changed to match your Bynder environment, the other attributes can be changed according to the Bynder Compact View [developer documentation](https://developer-docs.bynder.com/UI%20components/).
+The config property holds a JSON object that (partly) controls the behavior of the Bynder Compact View module. The value of the 'dataDefaultEnvironment' should always be changed to match your Bynder environment, the other attributes can be changed according to the Bynder Compact View [developer documentation](https://developer-docs.bynder.com/UI%20components/). The frontend:url property currently points to a version of this UI Extension hosted on Github Pages, _we strongly advise customers to host a copy of the extension themselves and replace the url property accordingly_.
 
 ### Step 2: Add a Bynder field to your document type(s)
 
