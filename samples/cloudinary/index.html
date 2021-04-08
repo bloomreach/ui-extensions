@@ -1,0 +1,214 @@
+<!--
+  Copyright 2019-2020 Bloomreach (http://www.bloomreach.com)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>BloomReach Cloudinary Extension</title>
+
+    <style>
+      html, body {
+        /* blend with the surrounding editor */
+        background-color: transparent;
+      }
+      body, pre {
+        margin: 0px;
+      }
+
+      #open-dialog-button {
+        margin: 5px 0 8px 5px;
+        display: none;
+        padding: 5px;
+        border-radius: 3px;
+      }
+
+      .image {
+        max-width: 100px;
+        max-height: 100px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 5px;
+        margin: 5px 0 5px 5px;
+      }
+      .image__editing:hover {
+        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
+        opacity: 0.5;
+      }
+      .image__added {
+        border: 6px solid rgb(0, 255, 0, 0.25);
+        border-radius: 0;
+        padding: 0;
+      }
+      .image__removed {
+        border: 6px solid rgb(255, 0, 0, 0.25);
+        border-radius: 0;
+        padding: 0;
+      }
+      #imported-assets {
+        min-height: 1px;
+      }      
+    </style>
+
+    <script src="https://unpkg.com/@bloomreach/ui-extension@14.5.0/dist/ui-extension.min.js"></script>    
+    
+    <script>
+      ((ui, mode) => {
+        //Enum for compare mode scenarios
+        const AssetActions = {
+          Added: 'added',
+          Removed: 'removed',
+          None: 'none',
+        };
+
+        function deserialize(value) {
+          return (value && JSON.parse(value)) || [];
+        }
+
+        function serialize(value) {
+          return value.length ? JSON.stringify(value) : '';
+        }
+
+        async function init() {
+          try {
+            ui = await UiExtension.register();
+            ({ mode } = await ui.document.get());
+
+            initDialogButton();
+            updatePreview();
+            ui.document.field.setHeight('auto');
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        }
+
+        function initDialogButton() {
+          const buttonElement = document.getElementById('open-dialog-button');
+          if (mode !== 'edit') {
+            buttonElement.style.display = 'none';
+            return;
+          }
+
+          const options = {
+            title: 'Cloudinary',
+            url: './dialog.html',
+            size: 'large',
+            value: '',
+          };
+
+          buttonElement.style.display = 'block';
+          buttonElement.addEventListener('click', () => showDialog(options));
+        }
+
+        async function showDialog(options) {
+          try {
+            const curvalue = await ui.document.field.getValue();
+            options.value = curvalue;
+            const newvalue = await ui.dialog.open(options);
+            console.log(newvalue);
+            await ui.document.field.setValue(newvalue);
+            await updatePreview();
+          } catch (error) {
+            if (error.code === 'DialogCanceled') {
+              return;
+            }
+
+            console.error('Error after open dialog: ', error.code, error.message);
+          }
+        }
+
+        async function updatePreview() {
+          var container = document.getElementById('imported-assets');
+          container.innerHTML = ''; //reset thumbnails div
+
+          const assets = deserialize(await ui.document.field.getValue());
+
+          if (mode === 'compare') {
+            const compare = deserialize(await ui.document.field.getCompareValue());
+            const removed = compare.filter(a => !assets.some(b => a.id === b.id));
+            const unchanged = compare.filter(a => assets.some(b => a.id === b.id));
+            const added = assets.filter(a => !compare.some(b => a.id === b.id));
+
+            addThumbnails(AssetActions.Removed, container, removed);
+            addThumbnails(AssetActions.None, container, unchanged);
+            addThumbnails(AssetActions.Added, container, added);
+
+            return;
+          }
+
+          addThumbnails(AssetActions.None, container, assets);
+        }
+
+        function addThumbnails(action, container, assets) {
+          assets.map(makeThumbnail.bind(null, action, container))
+            .forEach(img => { container.appendChild(img); });
+        }
+
+        function makeThumbnail(action, container, asset) {
+          const img = document.createElement('img');
+          img.className = 'image';
+
+          switch (asset.resource_type) {
+            case 'image':
+            case 'video':
+              img.src = asset.derived[1].secure_url || './no-preview.jpeg'; //The second element of the array has a 100x100 variant of the iamge to use as thumbnail, as defined in dialog.html
+              break;
+            default:
+              img.src = './no-preview.jpeg';
+          }
+
+          if (mode === 'edit') {
+            img.classList.add('image__editing');
+            img.addEventListener('click', async () => {
+              await removeAsset(asset);
+              container.removeChild(img);
+            });
+
+            return img;
+          }
+
+          if (mode === 'compare') {
+            img.classList.add({
+              [AssetActions.Added]: 'image__added',
+              [AssetActions.Removed]: 'image__removed',
+              [AssetActions.None]: 'image__unchanged',
+            }[action]);
+
+            return img;
+          }
+
+          return img;
+        }
+
+        async function removeAsset({ id }) {
+          const assets = deserialize(await ui.document.field.getValue())
+            .filter(asset => id !== asset.id);
+
+          await ui.document.field.setValue(serialize(assets));
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+      })();
+    </script>
+  </head>
+  <body>
+    <button id="open-dialog-button">Select asset(s)</button>
+    <div id="imported-assets"></div>
+  </body>
+</html>
