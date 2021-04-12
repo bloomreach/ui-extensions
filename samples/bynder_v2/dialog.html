@@ -1,0 +1,81 @@
+<!--
+  Copyright 2019 Hippo B.V. (http://www.onehippo.com)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>BloomReach Bynder Extension Dialog</title>
+
+    <style>
+      body {
+        margin: 0px;
+      }
+
+      #bynder {
+        height: 100%;
+        width: 100%;
+        position:absolute;
+      }
+    </style>
+
+    <script src="https://unpkg.com/@bloomreach/ui-extension@14.5.0/dist/ui-extension.min.js"></script>
+    <script src="https://d8ejoa1fys2rk.cloudfront.net/5.0.5/modules/compactview/bynder-compactview-2-latest.js"></script>
+  </head>
+  <body>
+    <div id="bynder"></div>
+    <script>
+      (ui => {
+
+        function deserialize(value) {
+          return (value && JSON.parse(value)) || [];
+        }
+
+        function serialize(value) {
+          return value.length ? JSON.stringify(value) : '';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {          
+          try {
+            ui = await UiExtension.register();
+            const options = await ui.dialog.options();
+            const config = deserialize(ui.extension.config);
+            const ids = deserialize(options.value).map(item => item.databaseId);
+
+            BynderCompactView.open({
+              container: document.getElementById('bynder'),
+              portal: {url: config.defaultDomain || '', editable: config.defaultDomain ? false : true},
+              language: config.language || "en_US",
+              mode: config.mode || "SingleSelect",
+              assetTypes: config.assetTypes || ['image'],
+              selectedAssets: ids,
+              onSuccess: function(assets, additionalInfo) {
+                if (additionalInfo.selectedFile !== undefined) assets[0].selectedFile = additionalInfo.selectedFile;
+                ui.dialog.close(serialize(assets));
+              }
+            });
+
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        });
+
+      })();
+    </script>
+  </body>
+</html>

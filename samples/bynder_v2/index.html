@@ -1,0 +1,284 @@
+<!--
+  Copyright 2019 Hippo B.V. (http://www.onehippo.com)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>BloomReach Bynder Extension</title>
+
+    <style>
+      html, body {
+        /* blend with the surrounding editor */
+        background-color: transparent;
+      }
+      body, pre {
+        margin: 0;
+      }
+
+      #open-dialog-button {
+        margin: 5px 0 8px 5px;
+        display: none;
+        padding: 5px;
+        border-radius: 3px;
+      }
+
+      .image {
+        max-width: 100px;
+        max-height: 100px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 5px;
+        margin: 5px 0 5px 5px;
+      }
+      .image__editing:hover {
+        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
+        opacity: 0.5;
+      }
+      .image__added {
+        border: 6px solid rgb(0, 255, 0, 0.25);
+        border-radius: 0;
+        padding: 0;
+      }
+      .image__removed {
+        border: 6px solid rgb(255, 0, 0, 0.25);
+        border-radius: 0;
+        padding: 0;
+      }
+      #imported-assets {
+        min-height: 1px;
+      }
+    </style>
+
+    <script src="https://unpkg.com/@bloomreach/ui-extension@14.5.0/dist/ui-extension.min.js"></script>    
+    
+    <script>
+      ((ui, mode) => {
+        //Enum for compare mode scenarios
+        const AssetActions = {
+          Added: 'added',
+          Removed: 'removed',
+          None: 'none',
+        };
+
+        function deserialize(value) {
+          return (value && JSON.parse(value)) || [];
+        }
+
+        function serialize(value) {
+          return value.length ? JSON.stringify(value) : '';
+        }
+
+        async function init() {
+          try {
+            ui = await UiExtension.register();
+            ({ mode } = await ui.document.get());
+
+            initDialogButton();
+            updatePreview();
+            ui.document.field.setHeight('auto');
+          } catch(error) {
+            console.error('Failed to register extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        }
+
+        function initDialogButton() {
+          const buttonElement = document.getElementById('open-dialog-button');
+          if (mode !== 'edit') {
+            buttonElement.style.display = 'none';
+            return;
+          }
+
+          const options = {
+            title: 'Bynder',
+            url: './dialog.html',
+            size: 'large',
+            value: '',
+          };
+
+          buttonElement.style.display = 'block';
+          buttonElement.addEventListener('click', () => showDialog(options));
+        }
+
+        async function showDialog(options) {
+          try {
+            const curvalue = await ui.document.field.getValue();
+            options.value = curvalue;
+            setAssetUsage(curvalue, false);
+
+            const newvalue = await ui.dialog.open(options);
+            await ui.document.field.setValue(newvalue);
+            await updatePreview();
+            await setAssetUsage(newvalue, true);
+          } catch (error) {
+            if (error.code === 'DialogCanceled') {
+              return;
+            }
+
+            console.error('Error after open dialog: ', error.code, error.message);
+          }
+        }
+
+        async function updatePreview() {
+          var container = document.getElementById('imported-assets');
+          container.innerHTML = ''; //reset thumbnails div
+
+          const assets = deserialize(await ui.document.field.getValue());
+
+          if (mode === 'compare') {
+            const compare = deserialize(await ui.document.field.getCompareValue());
+            const removed = compare.filter(a => !assets.some(b => a.id === b.id));
+            const unchanged = compare.filter(a => assets.some(b => a.id === b.id));
+            const added = assets.filter(a => !compare.some(b => a.id === b.id));
+
+            addThumbnails(AssetActions.Removed, container, removed);
+            addThumbnails(AssetActions.None, container, unchanged);
+            addThumbnails(AssetActions.Added, container, added);
+
+            return;
+          }
+
+          addThumbnails(AssetActions.None, container, assets);
+        }
+
+        function addThumbnails(action, container, assets) {
+          assets.map(makeThumbnail.bind(null, action, container))
+            .forEach(img => { container.appendChild(img); });
+        }
+
+        function makeThumbnail(action, container, asset) {
+          const img = document.createElement('img');
+          img.className = 'image';
+
+          switch (asset.type.toLowerCase()) {
+            case 'image':
+            case 'video':
+              img.src = asset.files.thumbnail.url;
+              break;
+            default:
+              img.src = './no-preview.jpeg';
+          }
+
+          if (mode === 'edit') {
+            img.classList.add('image__editing');
+            img.addEventListener('click', async () => {
+              await removeAsset(asset);
+              container.removeChild(img);
+            });
+
+            return img;
+          }
+
+          if (mode === 'compare') {
+            img.classList.add({
+              [AssetActions.Added]: 'image__added',
+              [AssetActions.Removed]: 'image__removed',
+              [AssetActions.None]: 'image__unchanged',
+            }[action]);
+
+            return img;
+          }
+
+          return img;
+        }
+
+        async function removeAsset({ id }) {
+          const curvalue = deserialize(await ui.document.field.getValue());
+          const newassets = curvalue.filter(asset => id !== asset.id);
+          const assetremoved = curvalue.filter(asset => id === asset.id);
+
+          await ui.document.field.setValue(serialize(newassets));
+          await setAssetUsage(serialize(assetremoved), false);
+        }
+
+        async function setAssetUsage(assets, create = true) {
+          config_parsed = deserialize(ui.extension.config);
+          if (config_parsed.defaultDomain === undefined || config_parsed.clientId === undefined || config_parsed.clientSecret === undefined) {
+            return;
+          }
+          
+          const basedomain = config_parsed.defaultDomain + (config_parsed.defaultDomain.slice(-1) === '/' ? '' : '/');
+          const token = await getToken(basedomain, config_parsed.clientId, config_parsed.clientSecret);
+          const document = await ui.document.get();
+            
+          if (create) {
+            deserialize(assets).forEach(async asset => await createAssetUsage(token, asset.databaseId, basedomain, ui.baseUrl + '?uuid=' + document.id, document.urlName));
+          } else {
+            deserialize(assets).forEach(async asset => await deleteAssetUsage(token, asset.databaseId, basedomain, ui.baseUrl + '?uuid=' + document.id));
+          }
+        }
+
+        async function getToken (basedomain, clientid, clientsecret) {
+          return fetch(basedomain + 'v6/authentication/oauth2/token', {
+            method: 'POST',
+            body: 'grant_type=client_credentials&client_id=' + clientid + '&client_secret=' + clientsecret,
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }).then(function (response) {
+            return response.json();
+          }).then(function (data) {
+            return data;
+          }).catch(function (err) {
+            console.log('Unable to fetch token', err);
+          });
+        }
+
+        async function createAssetUsage(token, assetid, basedomain, uri, additional) {
+          if (token == null) return;
+
+          let data = new URLSearchParams();
+          data.append('integration_id', 'b8e1252f-0216-49f5-8360-3df87f537dab');
+          data.append('asset_id', assetid);
+          data.append('uri', uri);
+          data.append('additional', additional);
+
+          return fetch(basedomain + 'api/media/usage', {
+            method: 'POST',
+            headers: {
+              'Authorization': token.token_type + ' ' + token.access_token,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: data
+          }).catch(function (err) {
+            console.log('Unable to create asset usage for id ' + assetid, err);
+          });  
+        }
+
+        async function deleteAssetUsage(token, assetid, basedomain, uri = '') {
+          if (token == null) return;
+          return fetch(basedomain + 'api/media/usage?integration_id=b8e1252f-0216-49f5-8360-3df87f537dab&asset_id=' + assetid + (uri.length ? ('&uri=' + uri) : ''), {
+            method: 'DELETE',
+            headers: {
+              'Authorization': token.token_type + ' ' + token.access_token,
+            }
+          }).catch(function (err) {
+            console.log('Unable to delete asset usage for id ' + assetid, err);
+          }); 
+        }
+ 
+        document.addEventListener('DOMContentLoaded', init);
+      })();
+    </script>
+  </head>
+  <body>
+    <button id="open-dialog-button">Select assets</button>
+    <div id="imported-assets"></div>
+  </body>
+</html>
