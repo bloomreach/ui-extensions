@@ -45,13 +45,13 @@ For demo and testing purposes, it's possible to use the Github-hosted version of
 
 Using the document type editor, add an "Open UI String" field to the relevant document type(s). Change the 'path' and 'Default Caption' to values that make sense for your project and set 'ui.extension' to 'bynder' (this needs to match the name of the node created in the previous step.
 
-If your document type uses dynamic content beans, the Cloudinary field will be available for use in frontend templates immediately. Otherwise you will need to update the content bean(s) of the changed document type(s). When using [Essentials](https://documentation.bloomreach.com/library/setup/introduction.html), this can be done using the [Bean Writer tool](https://documentation.bloomreach.com/library/setup/development-tools.html#beanwriter).
+If your document type uses dynamic content beans, the Bynder field will be available for use in frontend templates immediately. Otherwise you will need to update the content bean(s) of the changed document type(s). When using [Essentials](https://documentation.bloomreach.com/library/setup/introduction.html), this can be done using the [Bean Writer tool](https://documentation.bloomreach.com/library/setup/development-tools.html#beanwriter).
 
 You can now start using the plugin in your documents.
 
-### Step 3: Render the Cloudinary asset(s) in your frontend
+### Step 3: Render the Bynder asset(s) in your frontend
 
-You can now start using the Cloudinary references that are stored in your documents to render the assets in your frontend (templates).
+You can now start using the Bynder references that are stored in your documents to render the assets in your frontend (templates).
 
 ## Resources
 
