@@ -20,7 +20,7 @@ From a Bloomreach document, a picker dialog can be opened that loads Bynder's co
 
 ### Step 0 (OPTIONAL): Configure a O2uth2 application in your Bynder portal
 
-For the extension to be able register usage of Bynder assets in Bloomreach, it needs to be able to connect to the Bynder API. To enable this, create a OAuth2 application in your Bynder portal (see Bynder [documentation](https://developer-docs.bynder.com/authentication-oauth2-oauth-apps)). Make sure to select grant type "Client Credentials" and assign the app to a specific user account. It's advised to set up a dedicated user account for this purpose. Select the scopes `asset.usage:read` and `asset.usage:write` (no other scopes are needed). Copy the client ID and client secret to be used in the next step. Make sure to also add the domain **where the extension is hosted** to the HTTP access control list, otherwise the extension will not be able to call the Bynder API because of CORS restrictions.
+For the extension to be able register usage of Bynder assets in Bloomreach, it needs to be able to connect to the Bynder API. To enable this, create a OAuth2 application in your Bynder portal (see Bynder [documentation](https://developer-docs.bynder.com/authentication-oauth2-oauth-apps)). Make sure to select grant type "Client Credentials" and assign the app to a specific user account. It's advised to set up a dedicated user account for this purpose. Select the scopes `asset.usage:read` and `asset.usage:write` (no other scopes are needed). Copy the client ID and client secret to be used in the next step. Make sure to also add the **domain where the extension is hosted** to the HTTP access control list, otherwise the extension will not be able to call the Bynder API because of CORS restrictions.
 
 ### Step 1: Configure the extension in Bloomreach
 
@@ -37,7 +37,7 @@ Open the console of your Bloomreach instance and browse to the node `/hippo:conf
   frontend:url: <URL_WHERE_UI_EXTENSION_IS_HOSTED>
 ```
 
-The `frontend:config` property holds a JSON object that (partly) controls the behavior of the Bynder compact view. All of the keys are optional, and they can be changed according to the Bynder compact view [developer documentation](https://developer-docs.bynder.com/ui-components).
+The `frontend:config` property holds a JSON object that (partly) controls the behavior of the Bynder compact view. All of the parameters are optional, and they can be changed according to the Bynder compact view [developer documentation](https://developer-docs.bynder.com/ui-components) (see table at the bottom of the page).
 
 For demo and testing purposes, it's possible to use the Github-hosted version of this extension by setting the `frontend:url` property to `https://bloomreach.github.io/ui-extensions/samples/bynder_v2/`. Do not use this in production!
 
@@ -46,8 +46,6 @@ For demo and testing purposes, it's possible to use the Github-hosted version of
 Using the document type editor, add an "Open UI String" field to the relevant document type(s). Change the 'path' and 'Default Caption' to values that make sense for your project and set 'ui.extension' to 'bynder' (this needs to match the name of the node created in the previous step.
 
 If your document type uses dynamic content beans, the Bynder field will be available for use in frontend templates immediately. Otherwise you will need to update the content bean(s) of the changed document type(s). When using [Essentials](https://documentation.bloomreach.com/library/setup/introduction.html), this can be done using the [Bean Writer tool](https://documentation.bloomreach.com/library/setup/development-tools.html#beanwriter).
-
-You can now start using the plugin in your documents.
 
 ### Step 3: Render the Bynder asset(s) in your frontend
 

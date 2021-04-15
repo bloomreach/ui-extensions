@@ -1,0 +1,64 @@
+<!--
+  Copyright 2019 Hippo B.V. (http://www.onehippo.com)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Compact View</title>
+  
+    <style>
+      body {
+        margin: 0px;
+      }
+  
+      #bynder {
+        height: 100%;
+        width: 100%;
+        position:absolute;
+      }
+    </style>  
+  
+    <script src="https://d8ejoa1fys2rk.cloudfront.net/5.0.5/modules/compactview/bynder-compactview-2-latest.js"></script>
+  </head>
+  
+  <body>
+    <div id="bynder"></div>
+  
+    <script>
+      (() => {
+  
+        const pickerDialog = window.parent.CKEDITOR.dialog.getCurrent();
+  
+        BynderCompactView.open({
+          container: document.getElementById('bynder'),
+          portal: "https://bloomreach.getbynder.com",
+          language: 'en_US',
+          mode: 'SingleSelectFile',
+          assetTypes: ['image'],
+          selectedAssets: (pickerDialog != null ? [pickerDialog.parts.contents.getAttribute('data-bid')] : []),
+          onSuccess: function(assets, additionalInfo) {
+            if (additionalInfo.selectedFile != undefined && additionalInfo.selectedFile.url != undefined) Object.assign(assets[0], {"urlSelectedVariant" : additionalInfo.selectedFile.url});
+            pickerDialog.fire('assetSelected', assets[0]);
+            pickerDialog.getButton('cancel').click(); //firing the event does not close the dialog, so we also click the cancel button
+          }
+        });
+  
+      })();    
+    </script>
+  </body>
+  </html>
+  

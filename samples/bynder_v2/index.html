@@ -22,6 +22,8 @@
     
     <title>BloomReach Bynder Extension</title>
 
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:400" />
+
     <style>
       html, body {
         /* blend with the surrounding editor */
@@ -32,40 +34,71 @@
       }
 
       #open-dialog-button {
-        margin: 5px 0 8px 5px;
+        margin: 5px 0 8px 0px;
         display: none;
-        padding: 5px;
-        border-radius: 3px;
+        height: 36px;
+        min-width: 64px;
+        padding: 5px 16px 5px 16px;
+        background-color: transparent;
+        border-color: rgba(0,0,0,0.38);
+        border-radius: 4px;
+        border-width: 1px;
+        font-family: 'Open Sans', Arial, sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: rgba(0,0,0,0.87);
+      }
+      #open-dialog-button:hover {
+        background-color: rgb(0,0,0,0.05);
       }
 
-      .image {
-        max-width: 100px;
-        max-height: 100px;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        padding: 5px;
-        margin: 5px 0 5px 5px;
+      .asset {
+        overflow: hidden;
+        padding: 10px;
       }
-      .image__editing:hover {
-        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
+      .asset__editing:hover {
+        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5) inset;
         opacity: 0.5;
       }
-      .image__added {
+      .asset__added {
         border: 6px solid rgb(0, 255, 0, 0.25);
         border-radius: 0;
         padding: 0;
       }
-      .image__removed {
+      .asset__removed {
         border: 6px solid rgb(255, 0, 0, 0.25);
         border-radius: 0;
         padding: 0;
       }
-      #imported-assets {
-        min-height: 1px;
+      .asset-image {
+        max-width: 100px;
+        max-height: 100px;
+        padding: 5px;
+        margin-left: 5px;
+        margin-right: 15px;
+        float: left;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+      }
+      .asset-title {
+        padding-top: 10px;
+        margin: 2px 0px 0px 0px;
+        font-family: 'Open Sans', Arial, sans-serif;
+        font-size: 14px;
+      }
+      .asset-id {
+        margin: 0px 0px 0px 2px;
+        font-family: 'Open Sans', Arial, sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+      }
+
+      #bumper {
+        min-height: 5px;
       }
     </style>
 
-    <script src="https://unpkg.com/@bloomreach/ui-extension@14.5.0/dist/ui-extension.min.js"></script>    
+    <script src="https://unpkg.com/@bloomreach/ui-extension@14.5.0/dist/ui-extension.min.js"></script>
     
     <script>
       ((ui, mode) => {
@@ -143,29 +176,32 @@
 
           if (mode === 'compare') {
             const compare = deserialize(await ui.document.field.getCompareValue());
-            const removed = compare.filter(a => !assets.some(b => a.id === b.id));
-            const unchanged = compare.filter(a => assets.some(b => a.id === b.id));
-            const added = assets.filter(a => !compare.some(b => a.id === b.id));
+            const removed = compare.filter(a => !assets.some(b => a.databaseId === b.databaseId));
+            const unchanged = compare.filter(a => assets.some(b => a.databaseId === b.databaseId));
+            const added = assets.filter(a => !compare.some(b => a.databaseId === b.databaseId));
 
-            addThumbnails(AssetActions.Removed, container, removed);
-            addThumbnails(AssetActions.None, container, unchanged);
-            addThumbnails(AssetActions.Added, container, added);
+            addAssetDetails(AssetActions.Removed, container, removed);
+            addAssetDetails(AssetActions.None, container, unchanged);
+            addAssetDetails(AssetActions.Added, container, added);
 
             return;
           }
 
-          addThumbnails(AssetActions.None, container, assets);
+          addAssetDetails(AssetActions.None, container, assets);
         }
 
-        function addThumbnails(action, container, assets) {
-          assets.map(makeThumbnail.bind(null, action, container))
-            .forEach(img => { container.appendChild(img); });
+        function addAssetDetails(action, container, assets) {
+          assets.map(makeThumbnailAndInfo.bind(null, action, container))
+            .forEach(elt => { container.appendChild(elt); });
         }
 
-        function makeThumbnail(action, container, asset) {
+        function makeThumbnailAndInfo(action, container, asset) {
+
+          const div = document.createElement('div');
+          div.className = 'asset';
+
           const img = document.createElement('img');
-          img.className = 'image';
-
+          img.className = 'asset-image';
           switch (asset.type.toLowerCase()) {
             case 'image':
             case 'video':
@@ -174,34 +210,45 @@
             default:
               img.src = './no-preview.jpeg';
           }
+          div.appendChild(img);
+
+          const title = document.createElement('h3');
+          title.className = 'asset-title';
+          title.innerText = 'Title: ' + (asset.name || 'unknown');
+          div.appendChild(title);
+
+          const id = document.createElement('p');
+          id.className = 'asset-id';
+          id.innerText = 'ID: ' + (asset.databaseId || 'unknown');
+          div.appendChild(id);
 
           if (mode === 'edit') {
-            img.classList.add('image__editing');
-            img.addEventListener('click', async () => {
+            div.classList.add('asset__editing');
+            div.addEventListener('click', async () => {
               await removeAsset(asset);
-              container.removeChild(img);
+              container.removeChild(div);
             });
 
-            return img;
+            return div;
           }
 
           if (mode === 'compare') {
-            img.classList.add({
-              [AssetActions.Added]: 'image__added',
-              [AssetActions.Removed]: 'image__removed',
-              [AssetActions.None]: 'image__unchanged',
+            div.classList.add({
+              [AssetActions.Added]: 'asset__added',
+              [AssetActions.Removed]: 'asset__removed',
+              [AssetActions.None]: 'asset__unchanged',
             }[action]);
 
-            return img;
+            return div;
           }
 
-          return img;
+          return div;
         }
 
-        async function removeAsset({ id }) {
+        async function removeAsset({ databaseId }) {
           const curvalue = deserialize(await ui.document.field.getValue());
-          const newassets = curvalue.filter(asset => id !== asset.id);
-          const assetremoved = curvalue.filter(asset => id === asset.id);
+          const newassets = curvalue.filter(asset => databaseId !== asset.databaseId);
+          const assetremoved = curvalue.filter(asset => databaseId === asset.databaseId);
 
           await ui.document.field.setValue(serialize(newassets));
           await setAssetUsage(serialize(assetremoved), false);
@@ -278,7 +325,8 @@
     </script>
   </head>
   <body>
-    <button id="open-dialog-button">Select assets</button>
+    <button id="open-dialog-button">Select asset(s)</button>
     <div id="imported-assets"></div>
+    <div id="bumper"></div>
   </body>
 </html>

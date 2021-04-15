@@ -64,7 +64,7 @@
               assetTypes: config.assetTypes || ['image'],
               selectedAssets: ids,
               onSuccess: function(assets, additionalInfo) {
-                if (additionalInfo.selectedFile !== undefined) assets[0].selectedFile = additionalInfo.selectedFile;
+                if (additionalInfo.selectedFile !== undefined) Object.assign(assets[0], {"selectedFile" : additionalInfo.selectedFile});
                 ui.dialog.close(serialize(assets));
               }
             });
