@@ -51,6 +51,10 @@ If your document type uses dynamic content beans, the Bynder field will be avail
 
 You can now start using the Bynder references that are stored in your documents to render the assets in your frontend (templates).
 
+### (Optional) Step 4: Add a Bynder CKeditor plugin to your project
+
+To be able to add images directly into rich text fields, a Bynder CKEditor plugin is needed. A sample implementation of such as plugin is included in this repository [here](./ckeditor). Please note that this sample ckeditor plugin does _not_ register asset usage with Bynder.
+
 ## Resources
 
 - [Bloomreach UI Extensions Documentation](https://documentation.bloomreach.com/library/concepts/open-ui/introduction.html)
