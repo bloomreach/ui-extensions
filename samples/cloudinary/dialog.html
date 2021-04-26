@@ -45,7 +45,13 @@
             ui = await UiExtension.register();
             const options = await ui.dialog.options(); //Not currently using this
             const config = JSON.parse(ui.extension.config);
-            console.log(config);
+            const integration = {
+              type: 'bloomreach_connector',
+              platform: 'Bloomreach Experience Manager ' + (ui.version || ''),
+              version: '1.0',
+              environment: ui.baseUrl || ''
+            }
+            console.log(integration);
 
             window.ml = cloudinary.openMediaLibrary({
               cloud_name: config.cloudName || '',
@@ -58,10 +64,10 @@
               default_transformations: [
                 [{quality: 'auto',fetch_format: 'auto'}], //default for using in the front-end
                 [{width: '100', height: '100', crop: 'fit'}]  // default for thumbnail in Open UI plugin
-              ],               
+              ],
+              integration: integration,               
               }, {
               insertHandler: function (data) {
-                  console.log(JSON.stringify(data));
                   ui.dialog.close(JSON.stringify(data.assets));
                 }
               }
