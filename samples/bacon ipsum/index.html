@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Bacon Ipsum</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+
+<img src="https://baconipsum.com/wp-content/uploads/2011/06/bacon-ipsum-banner1.jpg" alt="Bacon Ipsum" />
+<br/>
+
+<form id="form">
+    <div class="form-group">
+        <label for="numberOfParagraphs">Number of Paragraphs </label>
+        <input type="number" class="form-control" max="100" id="numberOfParagraphs" placeholder="enter number of paragraphs to generate">
+    </div>
+</form>
+<p id="log"></p>
+ <button id="btn" class="btn btn-primary"> Submit</button>
+
+<div id="custom"></div>
+
+
+<br/>
+<script type="text/javascript">
+    document.getElementById('btn').addEventListener('click', generateParagraph)
+
+    function generateParagraph() {
+        const div = $('#custom');
+        div.empty();
+        var numberOfParagraphs = document.getElementById("numberOfParagraphs").value;
+        div.BaconIpsum({ paras:numberOfParagraphs});
+    }
+
+</script>
+
+</body>
+</html>
