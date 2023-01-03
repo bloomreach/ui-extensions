@@ -33,7 +33,7 @@
         margin: 0;
       }
 
-      #open-dialog-button {
+      .bynder-button {
         margin: 5px 0 8px 0px;
         display: none;
         height: 36px;
@@ -48,7 +48,7 @@
         font-size: 14px;
         color: rgba(0,0,0,0.87);
       }
-      #open-dialog-button:hover {
+      .bynder-button:hover {
         background-color: rgb(0,0,0,0.05);
       }
 
@@ -102,6 +102,10 @@
     
     <script>
       ((ui, mode) => {
+        let container;
+        let clearButtonElement;
+        let buttonElement;
+
         //Enum for compare mode scenarios
         const AssetActions = {
           Added: 'added',
@@ -122,8 +126,13 @@
             ui = await UiExtension.register();
             ({ mode } = await ui.document.get());
 
-            initDialogButton();
-            updatePreview();
+            container = document.getElementById('imported-assets');
+            clearButtonElement = document.getElementById('clear-image-button');
+            buttonElement = document.getElementById('open-dialog-button');
+            updatePreview().then((assetElements) => {
+              initButtons(assetElements);
+            });
+
             ui.document.field.setHeight('auto');
           } catch(error) {
             console.error('Failed to register extension:', error.message);
@@ -131,22 +140,42 @@
           }
         }
 
-        function initDialogButton() {
-          const buttonElement = document.getElementById('open-dialog-button');
-          if (mode !== 'edit') {
-            buttonElement.style.display = 'none';
-            return;
-          }
-
+        function showDialogAfterInit () {
           const options = {
             title: 'Bynder',
             url: './dialog.html',
             size: 'large',
             value: '',
           };
+          showDialog(options);
+        }
+
+        function removeAssetAfterInit () {
+          removeAsset(removeAssetAfterInit.assetElement);
+        }
+
+        async function initButtons(assetElements) {
+          const buttonElement = document.getElementById('open-dialog-button');
+          if (mode !== 'edit') {
+            buttonElement.style.display = 'none';
+            clearButtonElement.style.display = 'none';
+            return;
+          }
 
           buttonElement.style.display = 'block';
-          buttonElement.addEventListener('click', () => showDialog(options));
+          const assets = deserialize(await ui.document.field.getValue());
+
+          if (!assets || !assets.length) {
+            clearButtonElement.style.display = 'none';
+            ui.document.field.setHeight('45');
+          } else {
+            clearButtonElement.style.display = 'block';
+            ui.document.field.setHeight('auto');
+          }
+
+          removeAssetAfterInit.assetElement = assetElements[0];
+          buttonElement.addEventListener('click', showDialogAfterInit);
+          clearButtonElement.addEventListener('click', removeAssetAfterInit);
         }
 
         async function showDialog(options) {
@@ -157,7 +186,9 @@
 
             const newvalue = await ui.dialog.open(options);
             await ui.document.field.setValue(newvalue);
-            await updatePreview();
+            await updatePreview().then((assetElements) => {
+              initButtons(assetElements);
+            });
             await setAssetUsage(newvalue, true);
           } catch (error) {
             if (error.code === 'DialogCanceled') {
@@ -169,7 +200,6 @@
         }
 
         async function updatePreview() {
-          var container = document.getElementById('imported-assets');
           container.innerHTML = ''; //reset thumbnails div
 
           const assets = deserialize(await ui.document.field.getValue());
@@ -181,18 +211,21 @@
             const added = assets.filter(a => !compare.some(b => a.databaseId === b.databaseId));
 
             addAssetDetails(AssetActions.Removed, container, removed);
-            addAssetDetails(AssetActions.None, container, unchanged);
             addAssetDetails(AssetActions.Added, container, added);
+            return addAssetDetails(AssetActions.None, container, unchanged);
 
-            return;
           }
+          clearButtonElement.style.display = 'block'
 
-          addAssetDetails(AssetActions.None, container, assets);
+          return addAssetDetails(AssetActions.None, container, assets);
         }
 
         function addAssetDetails(action, container, assets) {
-          assets.map(makeThumbnailAndInfo.bind(null, action, container))
-            .forEach(elt => { container.appendChild(elt); });
+          return assets.map(makeThumbnailAndInfo.bind(null, action, container))
+            .map(assetElement => {
+              container.appendChild(assetElement);
+              return assetElement;
+            });
         }
 
         function makeThumbnailAndInfo(action, container, asset) {
@@ -202,6 +235,8 @@
 
           const img = document.createElement('img');
           img.className = 'asset-image';
+          img.id = asset.databaseId;
+
           switch (asset.type.toLowerCase()) {
             case 'image':
             case 'video':
@@ -222,16 +257,6 @@
           id.innerText = 'ID: ' + (asset.databaseId || 'unknown');
           div.appendChild(id);
 
-          if (mode === 'edit') {
-            div.classList.add('asset__editing');
-            div.addEventListener('click', async () => {
-              await removeAsset(asset);
-              container.removeChild(div);
-            });
-
-            return div;
-          }
-
           if (mode === 'compare') {
             div.classList.add({
               [AssetActions.Added]: 'asset__added',
@@ -245,13 +270,22 @@
           return div;
         }
 
-        async function removeAsset({ databaseId }) {
-          const curvalue = deserialize(await ui.document.field.getValue());
-          const newassets = curvalue.filter(asset => databaseId !== asset.databaseId);
-          const assetremoved = curvalue.filter(asset => databaseId === asset.databaseId);
+        async function removeAsset(assetElement) {
+          if (assetElement) {
+            const databaseId = assetElement.querySelector("img").id;
+            const curvalue = deserialize(await ui.document.field.getValue());
+            const newassets = curvalue.filter(asset => databaseId !== asset.databaseId);
+            const assetremoved = curvalue.filter(asset => databaseId === asset.databaseId);
 
-          await ui.document.field.setValue(serialize(newassets));
-          await setAssetUsage(serialize(assetremoved), false);
+            await ui.document.field.setValue(serialize(newassets));
+            await setAssetUsage(serialize(assetremoved), false);
+
+            if (container.contains(assetElement)) {
+              container.removeChild(assetElement);
+            }
+            clearButtonElement.style.display = 'none';
+            ui.document.field.setHeight('45');
+          }
         }
 
         async function setAssetUsage(assets, create = true) {
@@ -326,6 +360,7 @@
   </head>
   <body>
     <button id="open-dialog-button">Select asset(s)</button>
+    <button id="clear-image-button" class="bynder-button">Remove asset</button>
     <div id="imported-assets"></div>
     <div id="bumper"></div>
   </body>
