@@ -19,8 +19,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <title>BloomReach Bynder Extension</title>
+
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:400" />
 
     <style>
       html, body {
@@ -32,41 +34,72 @@
       }
 
       #open-dialog-button {
-        margin: 5px 0 8px 5px;
+        margin: 5px 0 8px 0px;
         display: none;
-        padding: 5px;
-        border-radius: 3px;
+        height: 36px;
+        min-width: 64px;
+        padding: 5px 16px 5px 16px;
+        background-color: transparent;
+        border-color: rgba(0,0,0,0.38);
+        border-radius: 4px;
+        border-width: 1px;
+        font-family: 'Open Sans', Arial, sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: rgba(0,0,0,0.87);
+      }
+      #open-dialog-button:hover {
+        background-color: rgb(0,0,0,0.05);
       }
 
-      .image {
-        max-width: 100px;
-        max-height: 100px;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        padding: 5px;
-        margin: 5px 0 5px 5px;
+      .asset {
+        overflow: hidden;
+        padding: 10px;
       }
-      .image__editing:hover {
-        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5);
+      .asset__editing:hover {
+        box-shadow: 0 0 3px 2px rgba(0, 140, 186, 0.5) inset;
         opacity: 0.5;
       }
-      .image__added {
+      .asset__added {
         border: 6px solid rgb(0, 255, 0, 0.25);
         border-radius: 0;
         padding: 0;
       }
-      .image__removed {
+      .asset__removed {
         border: 6px solid rgb(255, 0, 0, 0.25);
         border-radius: 0;
         padding: 0;
       }
-      #imported-assets {
-        min-height: 1px;
+      .asset-image {
+        max-width: 100px;
+        max-height: 100px;
+        padding: 5px;
+        margin-left: 5px;
+        margin-right: 15px;
+        float: left;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+      }
+      .asset-title {
+        padding-top: 10px;
+        margin: 2px 0px 0px 0px;
+        font-family: 'Open Sans', Arial, sans-serif;
+        font-size: 14px;
+      }
+      .asset-id {
+        margin: 0px 0px 0px 2px;
+        font-family: 'Open Sans', Arial, sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+      }
+
+      #bumper {
+        min-height: 5px;
       }
     </style>
 
-    <script src="https://unpkg.com/@bloomreach/ui-extension@14.4.0/dist/ui-extension.min.js"></script>    
-    
+    <script src="https://unpkg.com/@bloomreach/ui-extension@14.5.0/dist/ui-extension.min.js"></script>
+
     <script>
       ((ui, mode) => {
         //Enum for compare mode scenarios
@@ -120,9 +153,12 @@
           try {
             const curvalue = await ui.document.field.getValue();
             options.value = curvalue;
+            setAssetUsage(curvalue, false);
+
             const newvalue = await ui.dialog.open(options);
             await ui.document.field.setValue(newvalue);
             await updatePreview();
+            await setAssetUsage(newvalue, true);
           } catch (error) {
             if (error.code === 'DialogCanceled') {
               return;
@@ -140,66 +176,155 @@
 
           if (mode === 'compare') {
             const compare = deserialize(await ui.document.field.getCompareValue());
-            const removed = compare.filter(a => !assets.some(b => a.id === b.id));
-            const unchanged = compare.filter(a => assets.some(b => a.id === b.id));
-            const added = assets.filter(a => !compare.some(b => a.id === b.id));
+            const removed = compare.filter(a => !assets.some(b => a.databaseId === b.databaseId));
+            const unchanged = compare.filter(a => assets.some(b => a.databaseId === b.databaseId));
+            const added = assets.filter(a => !compare.some(b => a.databaseId === b.databaseId));
 
-            addThumbnails(AssetActions.Removed, container, removed);
-            addThumbnails(AssetActions.None, container, unchanged);
-            addThumbnails(AssetActions.Added, container, added);
+            addAssetDetails(AssetActions.Removed, container, removed);
+            addAssetDetails(AssetActions.None, container, unchanged);
+            addAssetDetails(AssetActions.Added, container, added);
 
             return;
           }
 
-          addThumbnails(AssetActions.None, container, assets);
+          addAssetDetails(AssetActions.None, container, assets);
         }
 
-        function addThumbnails(action, container, assets) {
-          assets.map(makeThumbnail.bind(null, action, container))
-            .forEach(img => { container.appendChild(img); });
+        function addAssetDetails(action, container, assets) {
+          assets.map(makeThumbnailAndInfo.bind(null, action, container))
+            .forEach(elt => { container.appendChild(elt); });
         }
 
-        function makeThumbnail(action, container, asset) {
+        function makeThumbnailAndInfo(action, container, asset) {
+
+          const div = document.createElement('div');
+          div.className = 'asset';
+
           const img = document.createElement('img');
-          img.className = 'image';
-
-          switch (asset.type) {
+          img.className = 'asset-image';
+          switch (asset.type.toLowerCase()) {
             case 'image':
             case 'video':
-              img.src = asset.thumbnails.webimage;
+              if (asset.files) {
+                // New schema
+                img.src = asset.files.thumbnail.url;
+              } else {
+                // Old schema
+                img.src = asset.thumbnails.webimage;
+              }
               break;
             default:
               img.src = './no-preview.jpeg';
           }
 
+          div.appendChild(img);
+
+          const title = document.createElement('h3');
+          title.className = 'asset-title';
+          title.innerText = 'Title: ' + (asset.name || 'unknown');
+          div.appendChild(title);
+
+          const id = document.createElement('p');
+          id.className = 'asset-id';
+          id.innerText = 'ID: ' + (asset.databaseId || 'unknown');
+          div.appendChild(id);
+
           if (mode === 'edit') {
-            img.classList.add('image__editing');
-            img.addEventListener('click', async () => {
+            div.classList.add('asset__editing');
+            div.addEventListener('click', async () => {
               await removeAsset(asset);
-              container.removeChild(img);
+              container.removeChild(div);
             });
 
-            return img;
+            return div;
           }
 
           if (mode === 'compare') {
-            img.classList.add({
-              [AssetActions.Added]: 'image__added',
-              [AssetActions.Removed]: 'image__removed',
-              [AssetActions.None]: 'image__unchanged',
+            div.classList.add({
+              [AssetActions.Added]: 'asset__added',
+              [AssetActions.Removed]: 'asset__removed',
+              [AssetActions.None]: 'asset__unchanged',
             }[action]);
 
-            return img;
+            return div;
           }
 
-          return img;
+          return div;
         }
 
-        async function removeAsset({ id }) {
-          const assets = deserialize(await ui.document.field.getValue())
-            .filter(asset => id !== asset.id);
+        async function removeAsset({ databaseId }) {
+          const curvalue = deserialize(await ui.document.field.getValue());
+          const newassets = curvalue.filter(asset => databaseId !== asset.databaseId);
+          const assetremoved = curvalue.filter(asset => databaseId === asset.databaseId);
 
-          await ui.document.field.setValue(serialize(assets));
+          await ui.document.field.setValue(serialize(newassets));
+          await setAssetUsage(serialize(assetremoved), false);
+        }
+
+        async function setAssetUsage(assets, create = true) {
+          config_parsed = deserialize(ui.extension.config);
+          if (config_parsed.dataDefaultEnvironment === undefined || config_parsed.clientId === undefined || config_parsed.clientSecret === undefined) {
+            return;
+          }
+
+          const basedomain = config_parsed.dataDefaultEnvironment + (config_parsed.dataDefaultEnvironment.slice(-1) === '/' ? '' : '/');
+          const token = await getToken(basedomain, config_parsed.clientId, config_parsed.clientSecret);
+          const document = await ui.document.get();
+
+          if (create) {
+            deserialize(assets).forEach(async asset => await createAssetUsage(token, asset.databaseId, basedomain, ui.baseUrl + '?uuid=' + document.id, document.urlName));
+          } else {
+            deserialize(assets).forEach(async asset => await deleteAssetUsage(token, asset.databaseId, basedomain, ui.baseUrl + '?uuid=' + document.id));
+          }
+        }
+
+        async function getToken (basedomain, clientid, clientsecret) {
+          return fetch(basedomain + 'v6/authentication/oauth2/token', {
+            method: 'POST',
+            body: 'grant_type=client_credentials&client_id=' + clientid + '&client_secret=' + clientsecret,
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }).then(function (response) {
+            return response.json();
+          }).then(function (data) {
+            return data;
+          }).catch(function (err) {
+            console.log('Unable to fetch token', err);
+          });
+        }
+
+        async function createAssetUsage(token, assetid, basedomain, uri, additional) {
+          if (token == null) return;
+
+          let data = new URLSearchParams();
+          data.append('integration_id', 'b8e1252f-0216-49f5-8360-3df87f537dab');
+          data.append('asset_id', assetid);
+          data.append('uri', uri);
+          data.append('additional', additional);
+
+          return fetch(basedomain + 'api/media/usage', {
+            method: 'POST',
+            headers: {
+              'Authorization': token.token_type + ' ' + token.access_token,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: data
+          }).catch(function (err) {
+            console.log('Unable to create asset usage for id ' + assetid, err);
+          });
+        }
+
+        async function deleteAssetUsage(token, assetid, basedomain, uri = '') {
+          if (token == null) return;
+          return fetch(basedomain + 'api/media/usage?integration_id=b8e1252f-0216-49f5-8360-3df87f537dab&asset_id=' + assetid + (uri.length ? ('&uri=' + uri) : ''), {
+            method: 'DELETE',
+            headers: {
+              'Authorization': token.token_type + ' ' + token.access_token,
+            }
+          }).catch(function (err) {
+            console.log('Unable to delete asset usage for id ' + assetid, err);
+          });
         }
 
         document.addEventListener('DOMContentLoaded', init);
@@ -207,7 +332,8 @@
     </script>
   </head>
   <body>
-    <button id="open-dialog-button">Select assets</button>
+    <button id="open-dialog-button">Select asset(s)</button>
     <div id="imported-assets"></div>
+    <div id="bumper"></div>
   </body>
 </html>
