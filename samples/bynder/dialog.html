@@ -49,21 +49,36 @@
           return value.length ? JSON.stringify(value) : '';
         }
 
+
+        function toDatabaseId(value) {
+          if (!value) return undefined;
+          const hex = String(value).replace(/[^a-fA-F0-9]/g, '').toLowerCase();
+          if (hex.length !== 32) return value;
+          return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16)
+            + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
           try {
             ui = await UiExtension.register();
             const options = await ui.dialog.options();
             const config = deserialize(ui.extension.config);
-            const ids = deserialize(options.value).map(item => item.databaseId);
+            const ids = deserialize(options.value)
+              .map(item => toDatabaseId(item.databaseId || item.id))
+              .filter(Boolean);
 
             BynderCompactView.open({
               container: document.getElementById('bynder'),
-              portal: {url: config.dataDefaultEnvironment || '', editable: config.dataDefaultEnvironment ? false : true},
+              portal: {url: config.dataDefaultEnvironment || '', editable: !config.dataDefaultEnvironment},
               language: config.language || "en_US",
               mode: config.mode || "SingleSelect",
               assetTypes: config.assetTypes || ['image'],
               selectedAssets: ids,
               onSuccess: function(assets, additionalInfo) {
+                console.log("====================== Assets")
+                console.log(assets)
+                console.log("====================== Additional Info")
+                console.log(additionalInfo)
                 if (additionalInfo.selectedFile !== undefined) Object.assign(assets[0], {"selectedFile" : additionalInfo.selectedFile});
                 ui.dialog.close(serialize(assets));
               }
