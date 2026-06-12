@@ -117,6 +117,10 @@
           return value.length ? JSON.stringify(value) : '';
         }
 
+        function assetId(asset) {
+          return asset.id || asset.databaseId;
+        }
+
         async function init() {
           try {
             ui = await UiExtension.register();
@@ -176,9 +180,9 @@
 
           if (mode === 'compare') {
             const compare = deserialize(await ui.document.field.getCompareValue());
-            const removed = compare.filter(a => !assets.some(b => a.databaseId === b.databaseId));
-            const unchanged = compare.filter(a => assets.some(b => a.databaseId === b.databaseId));
-            const added = assets.filter(a => !compare.some(b => a.databaseId === b.databaseId));
+            const removed = compare.filter(a => !assets.some(b => assetId(a) === assetId(b)));
+            const unchanged = compare.filter(a => assets.some(b => assetId(a) === assetId(b)));
+            const added = assets.filter(a => !compare.some(b => assetId(a) === assetId(b)));
 
             addAssetDetails(AssetActions.Removed, container, removed);
             addAssetDetails(AssetActions.None, container, unchanged);
@@ -226,7 +230,7 @@
 
           const id = document.createElement('p');
           id.className = 'asset-id';
-          id.innerText = 'ID: ' + (asset.databaseId || 'unknown');
+          id.innerText = 'ID: ' + (assetId(asset) || 'unknown');
           div.appendChild(id);
 
           if (mode === 'edit') {
@@ -252,10 +256,11 @@
           return div;
         }
 
-        async function removeAsset({ databaseId }) {
+        async function removeAsset(target) {
+          const targetId = assetId(target);
           const curvalue = deserialize(await ui.document.field.getValue());
-          const newassets = curvalue.filter(asset => databaseId !== asset.databaseId);
-          const assetremoved = curvalue.filter(asset => databaseId === asset.databaseId);
+          const newassets = curvalue.filter(asset => targetId !== assetId(asset));
+          const assetremoved = curvalue.filter(asset => targetId === assetId(asset));
 
           await ui.document.field.setValue(serialize(newassets));
           await setAssetUsage(serialize(assetremoved), false);
@@ -272,9 +277,9 @@
           const document = await ui.document.get();
 
           if (create) {
-            deserialize(assets).forEach(async asset => await createAssetUsage(token, asset.databaseId, basedomain, ui.baseUrl + '?uuid=' + document.id, document.urlName));
+            deserialize(assets).forEach(async asset => await createAssetUsage(token, assetId(asset), basedomain, ui.baseUrl + '?uuid=' + document.id, document.urlName));
           } else {
-            deserialize(assets).forEach(async asset => await deleteAssetUsage(token, asset.databaseId, basedomain, ui.baseUrl + '?uuid=' + document.id));
+            deserialize(assets).forEach(async asset => await deleteAssetUsage(token, assetId(asset), basedomain, ui.baseUrl + '?uuid=' + document.id));
           }
         }
 

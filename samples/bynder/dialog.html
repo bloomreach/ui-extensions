@@ -58,6 +58,57 @@
             + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
         }
 
+        /**
+         * We need to keep the old data format otherwise clients
+         * would need to rewrite their code.
+         *
+         * NOTE: we created this based on a couple of examples (might need more tweaking)
+         *
+         *
+         */
+        function toOldFormat(asset) {
+          // Already legacy (e.g. an asset loaded from an existing document).
+          if (asset.thumbnails && !asset.files) {
+            return asset;
+          }
+
+          const files = asset.files || {};
+          const mini = files.mini || {};
+          const webImage = files.webImage || {};
+          const thumbnail = files.thumbnail || {};
+
+          let orientation;
+          if (webImage.width && webImage.height) {
+            orientation = webImage.width > webImage.height ? 'landscape'
+              : webImage.width < webImage.height ? 'portrait' : 'square';
+          }
+
+          const nodes = (asset.metaproperties && asset.metaproperties.nodes) || [];
+          const extensionNode = nodes.find(node => node.name === 'extension');
+          const extension = extensionNode
+            ? (extensionNode.options || []).map(option => option.name)
+            : undefined;
+
+          return {
+            id: asset.databaseId || asset.id,
+            type: (asset.type || '').toLowerCase(),
+            name: asset.name,
+            description: asset.description || '',
+            tags: asset.tags || [],
+            orientation: orientation,
+            extension: extension,
+            datePublished: asset.publishedAt,
+            dateCreated: asset.createdAt,
+            dateModified: asset.updatedAt,
+            thumbnails: {
+              mini: mini.url,
+              webimage: webImage.url,
+              thul: thumbnail.url
+            },
+            original: asset.originalUrl || asset.url
+          };
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
           try {
             ui = await UiExtension.register();
@@ -75,12 +126,9 @@
               assetTypes: config.assetTypes || ['image'],
               selectedAssets: ids,
               onSuccess: function(assets, additionalInfo) {
-                console.log("====================== Assets")
-                console.log(assets)
-                console.log("====================== Additional Info")
-                console.log(additionalInfo)
-                if (additionalInfo.selectedFile !== undefined) Object.assign(assets[0], {"selectedFile" : additionalInfo.selectedFile});
-                ui.dialog.close(serialize(assets));
+                const normalized = assets.map(toOldFormat);
+                if (additionalInfo.selectedFile !== undefined) Object.assign(normalized[0], {"selectedFile" : additionalInfo.selectedFile});
+                ui.dialog.close(serialize(normalized));
               }
             });
 
