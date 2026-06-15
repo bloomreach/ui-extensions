@@ -109,6 +109,18 @@
           };
         }
 
+        /**
+         * Map an old compact config value to a new one.
+         */
+        function toMode(value) {
+          switch (value) {
+            case 'single': return 'SingleSelect';
+            case 'singleFile': return 'SingleSelectFile';
+            case 'multi': return 'MultiSelect';
+            default: return value || 'SingleSelect';
+          }
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
           try {
             ui = await UiExtension.register();
@@ -122,7 +134,7 @@
               container: document.getElementById('bynder'),
               portal: {url: config.dataDefaultEnvironment || '', editable: !config.dataDefaultEnvironment},
               language: config.language || "en_US",
-              mode: config.dataMode || "SingleSelect",
+              mode: toMode(config.dataMode),
               assetTypes: config.dataAssetTypes || ['image'],
               selectedAssets: ids,
               onSuccess: function(assets, additionalInfo) {
