@@ -122,8 +122,8 @@
               container: document.getElementById('bynder'),
               portal: {url: config.dataDefaultEnvironment || '', editable: !config.dataDefaultEnvironment},
               language: config.language || "en_US",
-              mode: config.mode || "SingleSelect",
-              assetTypes: config.assetTypes || ['image'],
+              mode: config.dataMode || "SingleSelect",
+              assetTypes: config.dataAssetTypes || ['image'],
               selectedAssets: ids,
               onSuccess: function(assets, additionalInfo) {
                 const normalized = assets.map(toOldFormat);
