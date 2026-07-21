@@ -34,7 +34,7 @@
     </style>
 
     <script src="https://unpkg.com/@bloomreach/ui-extension@14.5.0/dist/ui-extension.min.js"></script>
-    <script src="https://d8ejoa1fys2rk.cloudfront.net/5.0.5/modules/compactview/bynder-compactview-2-latest.js"></script>
+    <script src="https://d8ejoa1fys2rk.cloudfront.net/5.0.5/modules/compactview/bynder-compactview-3-latest.js"></script>
   </head>
   <body>
     <div id="bynder"></div>
@@ -63,6 +63,12 @@
               mode: config.mode || "SingleSelect",
               assetTypes: config.assetTypes || ['image'],
               selectedAssets: ids,
+              authentication: {
+                getAccessToken: () => {
+                  return sessionStorage.getItem('token')
+                },
+                hideLogout: true,
+              },
               onSuccess: function(assets, additionalInfo) {
                 if (additionalInfo.selectedFile !== undefined) Object.assign(assets[0], {"selectedFile" : additionalInfo.selectedFile});
                 ui.dialog.close(serialize(assets));

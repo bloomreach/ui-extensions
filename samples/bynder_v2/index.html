@@ -262,6 +262,9 @@
           
           const basedomain = config_parsed.defaultDomain + (config_parsed.defaultDomain.slice(-1) === '/' ? '' : '/');
           const token = await getToken(basedomain, config_parsed.clientId, config_parsed.clientSecret);
+          if (token) {
+            sessionStorage.setItem('token', token.access_token)
+          }
           const document = await ui.document.get();
             
           if (create) {
